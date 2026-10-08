@@ -39,8 +39,9 @@ class RaceController(Node):
             ("curvature_gain", 0.6), ("w_max", 1.5), ("search_window", 40),
             ("corridor_half_width", 0.17), ("avoid_distance", 0.45),
             ("clear_distance", 0.8), ("avoid_hold_s", 1.0),
-            ("gap_ahead", 1.0), ("gap_cap", 1.0),
-            ("replan_offset", 0.32), ("replan_points", 16), ("replan_ramp", 3),
+            ("gap_ahead", 1.0), ("gap_cap", 1.0), ("replan_clearance", 0.25),
+            ("replan_offset_min", 0.30), ("replan_offset_max", 0.38),
+            ("replan_points", 22), ("replan_ramp", 3),
             ("replan_speed", 0.12), ("replan_stop_distance", 0.15),
             ("replan_stop_half_width", 0.1), ("min_lap_time", 20.0),
         ])
@@ -232,7 +233,8 @@ class RaceController(Node):
 
     def start_replan(self):
         cfg = self.cfg
-        left, right = replan.lateral_gap(self.scan_pts, cfg["gap_ahead"], cfg["gap_cap"])
+        left, right, r_edge, l_edge = replan.free_beside(
+            self.scan_pts, cfg["gap_ahead"], cfg["corridor_half_width"], cfg["gap_cap"])
         if self.replan_side is None:
             self.replan_side = replan.choose_side(left, right)
             kept = ""
@@ -240,16 +242,18 @@ class RaceController(Node):
             # Still passing the same obstacle: keep the side picked first.
             kept = " Keeping the side picked first."
         side = self.replan_side
+        offset = replan.pass_offset(side, r_edge, l_edge, cfg["replan_clearance"],
+                                    cfg["replan_offset_min"], cfg["replan_offset_max"])
         n = len(self.base_wps)
         start = self.idx
         self.wps = replan.shift_waypoints(self.base_wps, start, cfg["replan_points"],
-                                          side * cfg["replan_offset"], cfg["replan_ramp"])
+                                          offset, cfg["replan_ramp"])
         self.replan_end = (start + cfg["replan_points"]) % n
         word = "left" if side > 0 else "right"
         self.fire(sm.BLOCKED)
         self.say("info", f"Free space left {left:.2f} m, right {right:.2f} m.{kept} "
                          f"Shifting the next {cfg['replan_points']} waypoints "
-                         f"{cfg['replan_offset']:.2f} m to the {word}.",
+                         f"{abs(offset):.2f} m to the {word}.",
                  left_free=left, right_free=right, side=word)
 
     def end_replan(self):

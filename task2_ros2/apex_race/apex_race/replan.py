@@ -67,23 +67,47 @@ def free_space(ranges, angle_min, angle_increment, lo, hi, range_min, range_max,
     return sum(vals) / len(vals) if vals else 0.0
 
 
-def lateral_gap(points, ahead, cap):
-    """Free space on each side of the path ahead, from scan points.
+def free_beside(points, ahead, half_width, cap, join=0.06, depth=0.35):
+    """Free space left and right of the obstacle in the corridor ahead.
 
-    Looks at points with 0 < forward < ahead. The left gap is the smallest
-    left offset of any point on the left, the right gap the same on the
-    right. A side with no points gets cap. Returns (left_gap, right_gap).
+    The obstacle starts as the scan points inside the corridor
+    (|left| <= half_width, 0 < forward < ahead). It grows sideways over
+    nearby points (gaps up to join) within depth of its nearest point.
+    Free space on a side is the gap from the obstacle's edge to the next
+    point on that side, or cap if nothing is there.
+
+    Returns (left_free, right_free, right_edge, left_edge). The edges are
+    the obstacle's extent in the left direction (right_edge <= left_edge).
     """
-    left = cap
-    right = cap
-    for fx, fy in points:
-        if not 0.0 < fx < ahead:
-            continue
-        if fy >= 0:
-            left = min(left, fy)
-        else:
-            right = min(right, -fy)
-    return left, right
+    near = [(fx, fy) for fx, fy in points if 0.0 < fx < ahead]
+    core = [p for p in near if abs(p[1]) <= half_width]
+    if not core:
+        return cap, cap, 0.0, 0.0
+    fx0 = min(p[0] for p in core)
+    lo = min(p[1] for p in core)
+    hi = max(p[1] for p in core)
+    body = sorted(fy for fx, fy in near if fx0 - 0.05 <= fx <= fx0 + depth)
+    for fy in body:
+        if hi < fy <= hi + join:
+            hi = fy
+    for fy in reversed(body):
+        if lo - join <= fy < lo:
+            lo = fy
+    left_pts = [fy for _, fy in near if fy > hi + join]
+    right_pts = [fy for _, fy in near if fy < lo - join]
+    left = min(min(left_pts) - hi, cap) if left_pts else cap
+    right = min(lo - max(right_pts), cap) if right_pts else cap
+    return left, right, lo, hi
+
+
+def pass_offset(side, right_edge, left_edge, clearance, lo, hi):
+    """Sideways shift that puts the car clearance beyond the obstacle edge.
+
+    side is +1 (left) or -1 (right). The result is clamped to [lo, hi]
+    in size and carries the sign of side.
+    """
+    need = left_edge + clearance if side > 0 else -right_edge + clearance
+    return side * max(lo, min(hi, need))
 
 
 def choose_side(left_free, right_free):

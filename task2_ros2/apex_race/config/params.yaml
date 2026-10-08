@@ -24,8 +24,10 @@ race_controller_node:
     avoid_hold_s: 1.0             # s stopped in AVOID before REPLAN
     gap_ahead: 1.0                # m, scan points this far ahead count when comparing sides
     gap_cap: 1.0                  # m, a side with nothing in it counts as this much free space
-    replan_offset: 0.32           # m, sideways shift of the waypoints
-    replan_points: 16             # waypoints shifted (0.1 m apart), from the car's position
+    replan_clearance: 0.25        # m, from the obstacle's seen edge to the racer's centre line
+    replan_offset_min: 0.30       # m, smallest sideways shift of the waypoints
+    replan_offset_max: 0.38       # m, largest shift: keeps 0.13 m to the wall
+    replan_points: 22             # waypoints shifted (0.1 m apart), from the car's position
     replan_ramp: 3                # waypoints used to ramp the shift in and out
     replan_speed: 0.12            # m/s while in REPLAN
     replan_stop_distance: 0.15    # m, REPLAN to AVOID only if something is this close

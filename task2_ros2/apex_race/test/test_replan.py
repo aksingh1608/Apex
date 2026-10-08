@@ -71,16 +71,41 @@ def test_contact_counter_hysteresis():
     assert c.count == 2
 
 
-def test_lateral_gap_sees_cone_on_the_right():
-    # Walls 0.6 m to each side, a cone 0.1 m right of centre 0.6 m ahead.
-    pts = [(x / 10, 0.6) for x in range(1, 15)] + [(x / 10, -0.6) for x in range(1, 15)]
-    pts += [(0.6, -0.05), (0.62, -0.1), (0.6, -0.15)]
-    left, right = rp.lateral_gap(pts, 1.0, 1.0)
-    assert left == pytest.approx(0.6)
-    assert right == pytest.approx(0.05)
+def walls_and(extra):
+    pts = [(x / 20, 0.6) for x in range(1, 30)] + [(x / 20, -0.6) for x in range(1, 30)]
+    return pts + extra
+
+
+def test_free_beside_cone_right_of_centre():
+    cone = [(0.6, -0.05), (0.59, -0.1), (0.6, -0.15)]
+    left, right, lo, hi = rp.free_beside(walls_and(cone), 1.0, 0.17, 1.0)
+    assert hi == pytest.approx(-0.05)
+    assert lo == pytest.approx(-0.15)
+    assert left == pytest.approx(0.65)
+    assert right == pytest.approx(0.45)
     assert rp.choose_side(left, right) == 1
 
 
-def test_lateral_gap_ignores_points_behind_and_far():
-    pts = [(-0.3, 0.05), (2.0, -0.05)]
-    assert rp.lateral_gap(pts, 1.0, 0.8) == (0.8, 0.8)
+def test_free_beside_car_on_centre_line_is_not_zero():
+    # The old smallest-gap measure gave 0.00 m on both sides here.
+    car = [(0.6, y / 100) for y in range(-5, 6)]
+    left, right, lo, hi = rp.free_beside(walls_and(car), 1.0, 0.17, 1.0)
+    assert left == pytest.approx(0.55)
+    assert right == pytest.approx(0.55)
+
+
+def test_free_beside_grows_past_the_corridor():
+    wide = [(0.6, y / 100) for y in range(-10, 31, 3)]
+    left, right, lo, hi = rp.free_beside(walls_and(wide), 1.0, 0.17, 1.0)
+    assert hi == pytest.approx(0.29)
+    assert left == pytest.approx(0.31)
+
+
+def test_free_beside_empty_corridor():
+    assert rp.free_beside(walls_and([]), 1.0, 0.17, 1.0)[:2] == (1.0, 1.0)
+
+
+def test_pass_offset():
+    assert rp.pass_offset(1, -0.15, -0.05, 0.25, 0.3, 0.38) == pytest.approx(0.3)
+    assert rp.pass_offset(-1, -0.05, 0.05, 0.25, 0.3, 0.38) == pytest.approx(-0.3)
+    assert rp.pass_offset(-1, -0.2, 0.05, 0.25, 0.3, 0.38) == pytest.approx(-0.38)

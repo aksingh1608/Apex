@@ -1,0 +1,12 @@
+{
+  "build": "3 min 45 s (225 s measured with --no-cache)",
+  "start": "under 1 s (0.14 s)",
+  "colcon": "about 2 s (1.7 s)",
+  "tests": "about 1 s (0.76 s for 39 tests)",
+  "world": "under 1 s (0.09 s)",
+  "mission": "4 min 42 s",
+  "mission_player": "5 min 27 s",
+  "analyze": "about 1 s (1.16 s)",
+  "gui_up": "2.2 s to a ready racer with no window; I did not time the Gazebo window itself",
+  "race": "4.5 to 5 min (267 s one car, 298 s two cars, pause not counted)"
+}

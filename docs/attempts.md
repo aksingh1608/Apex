@@ -56,3 +56,9 @@ Each entry records an approach that failed, what broke, and what came next.
 - Tried: the same REPLAN as for the cone (smallest sideways gap on each side, a fixed 0.32 m shift over 16 waypoints), with the player car parked on the centre line of the front straight.
 - Broke: run `20261008_205513`. The gaps read 0.00 m left and 0.00 m right, because the parked car sits across the centre line and its own scan points count on both sides. The racer passed on the right and the monitor logged contact event 1 at a range of 0.150 m. The same pass on lap 3 gave contact event 2. The lowest range in the run was 0.12 m. Two more causes: the other Burger's wheels sit below the LiDAR plane, so it is wider than it looks in the scan, and the shifted stretch ended about 0.1 m past the car, so pure pursuit cut back while the racer was still beside it.
 - Next: measure the free space beside the obstacle, from its edge to the next point on each side. Size the shift from the obstacle's edge plus 0.25 m, between 0.30 and 0.38 m. Shift 22 waypoints instead of 16.
+
+## 2026-10-08: Task 2, the keyboard node crashed on start
+
+- Tried: start `keyboard_node` in a terminal (tested with `script` as a fake terminal, on ROS domain 42 so it could not touch a running race).
+- Broke: `AttributeError: __enter__` inside `rclpy/node.py`. My class had a method called `handle`, which replaced the `handle` that rclpy's `Node` uses internally.
+- Next: renamed the method to `on_key`. The same test then sent g and p on `/apex/command`, set `/player/cmd_vel` to 0.05 and 0.10 m/s with w, and sent zero on space and on exit.

@@ -43,7 +43,7 @@ class Keyboard(Node):
         t.angular.z = self.w
         self.vel_pub.publish(t)
 
-    def handle(self, key):
+    def on_key(self, key):
         c = self.cfg
         if key in RACE_KEYS:
             self.cmd_pub.publish(String(data=key))
@@ -94,7 +94,7 @@ def main():
             key = sys.stdin.read(1).lower()
             if key == "q":
                 break
-            text = node.handle(key)
+            text = node.on_key(key)
             if text:
                 print(text, flush=True)
     except KeyboardInterrupt:

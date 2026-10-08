@@ -44,3 +44,15 @@ Each entry records an approach that failed, what broke, and what came next.
 - Tried: stop at 0.45 m in AVOID, then pick a side by the mean LiDAR range in a 15 to 75 degree sector on each side, and shift 14 waypoints by 0.32 m starting one waypoint ahead.
 - Broke: run `20261008_184111`. The sectors read 0.95 m left and 0.91 m right, nearly a tie, because they barely saw the cone. The shift reached full width only at the cone, so the racer turned too little and came to 0.20 m from the cone. From there the cone sat on the edge of the corridor. The state flipped between AVOID and REPLAN 87 times, the side choice flipped to the cone side, and I aborted the run after 170 s. No contact event: the lowest range was 0.229 m.
 - Next: stop at 0.6 m and call the path clear only beyond 0.8 m. Compare the smallest sideways gap to scan points on each side within 1 m ahead. Shift waypoints from the car's own position. Keep the first side until the car is past. In REPLAN, stop only for something within 0.15 m in a band as wide as the car.
+
+## 2026-10-08: Task 2, the old race kept running after the script ended
+
+- Tried: `headless_run.sh` started `ros2 launch ... &` and sent it SIGINT on exit.
+- Broke: the next run with the player car printed `Entity [auto] already exists` and `Spawn service failed`. The old gzserver and the old nodes were still running, and two race controllers answered on the same topics. A non-interactive bash starts background jobs with SIGINT ignored, so the launch never saw the signal. The killed processes then stayed as zombies, because the container's first process was `sleep infinity`.
+- Next: `set -m` in the script, so the launch runs in its own process group with SIGINT working, and the stop signal goes to the whole group. `run.sh` now starts the container with `--init`, which reaps dead processes. The script also stops early if a spawn fails.
+
+## 2026-10-08: Task 2, the racer brushed past the player car
+
+- Tried: the same REPLAN as for the cone (smallest sideways gap on each side, a fixed 0.32 m shift over 16 waypoints), with the player car parked on the centre line of the front straight.
+- Broke: run `20261008_205513`. The gaps read 0.00 m left and 0.00 m right, because the parked car sits across the centre line and its own scan points count on both sides. The racer passed on the right and the monitor logged contact event 1 at a range of 0.150 m. The same pass on lap 3 gave contact event 2. The lowest range in the run was 0.12 m. Two more causes: the other Burger's wheels sit below the LiDAR plane, so it is wider than it looks in the scan, and the shifted stretch ended about 0.1 m past the car, so pure pursuit cut back while the racer was still beside it.
+- Next: measure the free space beside the obstacle, from its edge to the next point on each side. Size the shift from the obstacle's edge plus 0.25 m, between 0.30 and 0.38 m. Shift 22 waypoints instead of 16.

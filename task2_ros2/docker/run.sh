@@ -27,7 +27,7 @@ if docker ps -a --format '{{.Names}}' | grep -qx apex; then
 fi
 
 args=(
-  docker run --name apex
+  docker run --name apex --init
   --user "$(id -u):$(id -g)"
   --network host
   --env HOME=/tmp/apex-home

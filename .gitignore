@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Task 1 generated files (the notebook writes them)
+task1_pybullet/urdf/
+
+# ROS 2 build folders
+build/
+install/
+log/
+
+# Run logs (keep only runs copied to results/)
+task2_ros2/runs/
+
+# Local tool folders
+.claude/
+.cursor/
+CLAUDE.md

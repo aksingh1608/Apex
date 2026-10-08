@@ -218,6 +218,8 @@ Every number here comes from a logged run in `task2_ros2/results/`. Both final r
 | Pauses | 1 | 1 |
 | Wall clock for the whole script | 4 min 42 s | 5 min 27 s |
 
+The mission repeats closely. A second one car run, on a fresh container from the README command (`runs/20261008_215110`, not committed), gave 80.0, 92.1 and 92.3 s, 0 contact events and 41.33 m.
+
 What happened in the one car run:
 
 * Lap 1 had nothing on the track and took 80.0 s. Speed was 0.22 m/s on the straights and about 0.147 m/s in the turns, as the curvature rule predicts.

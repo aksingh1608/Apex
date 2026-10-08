@@ -7,6 +7,7 @@ Settings come from the drop_obstacle section of params.yaml:
 """
 
 import json
+import signal
 
 import rclpy
 from gazebo_msgs.srv import SpawnEntity
@@ -78,6 +79,8 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        # A second Ctrl+C (ros2 launch forwards one) must not cut the cleanup short.
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         node.destroy_node()
         rclpy.try_shutdown()
 

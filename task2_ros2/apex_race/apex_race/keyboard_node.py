@@ -100,6 +100,8 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        # A second Ctrl+C (ros2 launch forwards one) must not cut the cleanup short.
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old)
         node.stop()
         print("Keyboard node stopped. Sent zero velocity to the player car.")

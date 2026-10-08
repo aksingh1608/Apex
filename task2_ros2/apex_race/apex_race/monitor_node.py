@@ -228,6 +228,8 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        # A second Ctrl+C (ros2 launch forwards one) must not cut the cleanup short.
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         node.close()
         node.get_logger().info("Monitor shutting down. Sent zero velocity as a safety stop.")
         node.destroy_node()

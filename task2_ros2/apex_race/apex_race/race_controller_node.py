@@ -41,8 +41,10 @@ class RaceController(Node):
             ("clear_distance", 0.8), ("avoid_hold_s", 1.0),
             ("gap_ahead", 1.0), ("gap_cap", 1.0), ("replan_clearance", 0.25),
             ("replan_offset_min", 0.30), ("replan_offset_max", 0.38),
+            ("replan_offset_step", 0.04),
             ("replan_points", 22), ("replan_ramp", 3),
-            ("replan_speed", 0.12), ("replan_stop_distance", 0.15),
+            ("replan_speed", 0.12), ("replan_lookahead", 0.25),
+            ("replan_stop_distance", 0.15),
             ("replan_stop_half_width", 0.1), ("min_lap_time", 20.0),
         ])
         self.cfg = {x.name: x.value for x in p}
@@ -92,6 +94,7 @@ class RaceController(Node):
         self.countdown_said = None
         self.replan_end = None
         self.replan_side = None
+        self.replan_tries = 0
 
         self.create_timer(1.0 / cfg["control_rate"], self.tick)
         self.create_timer(1.0 / cfg["status_rate"], self.publish_status)
@@ -215,7 +218,7 @@ class RaceController(Node):
         t.angular.z = float(w)
         self.cmd_pub.publish(t)
 
-    def pursue(self, v_cap=None):
+    def pursue(self, v_cap=None, lookahead=None):
         cfg = self.cfg
         x, y, yaw = self.pose
         if self.idx is None:
@@ -223,7 +226,7 @@ class RaceController(Node):
         else:
             self.idx = pursuit.nearest_index(self.wps, x, y, self.idx, cfg["search_window"])
         v, w, k, _ = pursuit.pursuit_command(
-            self.wps, x, y, yaw, self.idx, cfg["lookahead"], cfg["v_max"], cfg["v_min"],
+            self.wps, x, y, yaw, self.idx, lookahead or cfg["lookahead"], cfg["v_max"], cfg["v_min"],
             cfg["curvature_gain"], cfg["w_max"])
         if v_cap is not None and v > v_cap:
             w = w * v_cap / v if v > 0 else w
@@ -237,13 +240,20 @@ class RaceController(Node):
             self.scan_pts, cfg["gap_ahead"], cfg["corridor_half_width"], cfg["gap_cap"])
         if self.replan_side is None:
             self.replan_side = replan.choose_side(left, right)
+            self.replan_tries = 0
             kept = ""
         else:
+            self.replan_tries += 1
             # Still passing the same obstacle: keep the side picked first.
             kept = " Keeping the side picked first."
         side = self.replan_side
-        offset = replan.pass_offset(side, r_edge, l_edge, cfg["replan_clearance"],
-                                    cfg["replan_offset_min"], cfg["replan_offset_max"])
+        # Each retry for the same obstacle asks for a wider pass.
+        offset = replan.pass_offset(side, r_edge, l_edge,
+                                    cfg["replan_clearance"]
+                                    + self.replan_tries * cfg["replan_offset_step"],
+                                    cfg["replan_offset_min"]
+                                    + self.replan_tries * cfg["replan_offset_step"],
+                                    cfg["replan_offset_max"])
         n = len(self.base_wps)
         start = self.idx
         self.wps = replan.shift_waypoints(self.base_wps, start, cfg["replan_points"],
@@ -324,7 +334,7 @@ class RaceController(Node):
                 self.end_replan()
                 self.fire(sm.PASSED)
             else:
-                self.pursue(v_cap=cfg["replan_speed"])
+                self.pursue(v_cap=cfg["replan_speed"], lookahead=cfg["replan_lookahead"])
         else:
             self.send(0.0, 0.0)
         if st == sm.IDLE:
@@ -378,6 +388,8 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        # A second Ctrl+C (ros2 launch forwards one) must not cut the cleanup short.
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         node.stop()
         node.get_logger().info("Shutting down. Sent zero velocity.")
         node.destroy_node()

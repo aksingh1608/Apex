@@ -27,9 +27,11 @@ race_controller_node:
     replan_clearance: 0.25        # m, from the obstacle's seen edge to the racer's centre line
     replan_offset_min: 0.30       # m, smallest sideways shift of the waypoints
     replan_offset_max: 0.38       # m, largest shift: keeps 0.13 m to the wall
+    replan_offset_step: 0.04      # m, extra shift each time REPLAN restarts for the same obstacle
     replan_points: 22             # waypoints shifted (0.1 m apart), from the car's position
     replan_ramp: 3                # waypoints used to ramp the shift in and out
     replan_speed: 0.12            # m/s while in REPLAN
+    replan_lookahead: 0.25        # m, shorter than lookahead so the racer reaches the shifted line sooner
     replan_stop_distance: 0.15    # m, REPLAN to AVOID only if something is this close
     replan_stop_half_width: 0.1   # m, half the Burger's width: the band checked in REPLAN
     min_lap_time: 20.0            # s, ignore finish line crossings closer than this

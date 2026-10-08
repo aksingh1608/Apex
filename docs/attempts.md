@@ -62,3 +62,9 @@ Each entry records an approach that failed, what broke, and what came next.
 - Tried: start `keyboard_node` in a terminal (tested with `script` as a fake terminal, on ROS domain 42 so it could not touch a running race).
 - Broke: `AttributeError: __enter__` inside `rclpy/node.py`. My class had a method called `handle`, which replaced the `handle` that rclpy's `Node` uses internally.
 - Next: renamed the method to `on_key`. The same test then sent g and p on `/apex/command`, set `/player/cmd_vel` to 0.05 and 0.10 m/s with w, and sent zero on space and on exit.
+
+## 2026-10-08: Task 2, the racer got wedged beside the player car
+
+- Tried: the free space measure and a 0.30 m shift, with the normal 0.45 m pure pursuit lookahead in REPLAN.
+- Broke: run `20261008_210502`. The free space read 0.53 m on each side, which was right, but the racer was only 0.15 m off the centre line when it drew level with the parked car. Pure pursuit with a 0.45 m lookahead closes a sideways gap over about a metre, and the racer stops only about 0.6 m before the obstacle. The range fell to 0.141 m (contact events 1 to 3). Each new REPLAN then hit the 0.15 m safety band at once, so it looped beside the car until I aborted at 137 s. The cone runs never showed this, because the cone sits 0.1 m toward the other side.
+- Next: a 0.25 m lookahead in REPLAN, so the racer reaches the shifted line sooner. Each repeat REPLAN for the same obstacle widens the shift by 0.04 m, up to 0.38 m.

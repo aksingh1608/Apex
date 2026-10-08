@@ -1,0 +1,54 @@
+# Apex circuit layout. Change this file, then run world_gen/generate_world.py.
+# All lengths are in metres. The track is a stadium shape centred on (0, 0).
+# Cars run counterclockwise: +x on the front straight (y < 0).
+
+track:
+  straight_length: 3.0      # length of each straight
+  turn_radius: 1.2          # radius of the centre line in the turns
+  width: 1.2                # wall to wall
+  waypoint_spacing: 0.1     # spacing of centre line waypoints
+
+walls:
+  height: 0.3               # the Burger LiDAR sits about 0.17 m up
+  thickness: 0.05
+  arc_step_deg: 10          # one wall block per this many degrees of turn
+
+finish_line_x: 0.0          # finish line crosses the front straight here
+
+grid:                       # start positions, behind the finish line
+  auto:   {x: -0.35, y: -1.45, yaw: 0.0}
+  player: {x: -0.85, y: -0.95, yaw: 0.0}
+
+gantry:
+  height: 0.9
+  colour: [0.15, 0.15, 0.18]
+
+pit_lane:
+  offset: 0.7               # gap from the outer wall of the front straight
+  width: 0.5
+  length: 3.0
+  boxes: 3
+
+grandstands:                # outside the back straight
+  - {x: -0.9, rows: 3, seats: 6}
+  - {x: 0.9, rows: 3, seats: 6}
+
+light_tower: {x: 3.3, y: 2.4, height: 1.6}
+
+cones:                      # decoration, in the infield and by the pit lane
+  - [-1.5, 0.0]
+  - [1.5, 0.0]
+  - [-1.5, -2.2]
+  - [1.5, -2.2]
+
+tyre_stacks:                # outside the turns
+  - [-3.45, -1.3]
+  - [-3.45, 1.3]
+  - [3.45, -1.3]
+  - [3.45, 1.3]
+
+banners:                    # plain colour boards outside the outer wall
+  - {x: -1.0, side: front, colour: [0.85, 0.1, 0.1]}
+  - {x: 1.0, side: front, colour: [0.1, 0.3, 0.85]}
+  - {x: -2.2, side: back, colour: [0.95, 0.75, 0.1]}
+  - {x: 2.2, side: back, colour: [0.1, 0.65, 0.3]}

@@ -67,6 +67,25 @@ def free_space(ranges, angle_min, angle_increment, lo, hi, range_min, range_max,
     return sum(vals) / len(vals) if vals else 0.0
 
 
+def lateral_gap(points, ahead, cap):
+    """Free space on each side of the path ahead, from scan points.
+
+    Looks at points with 0 < forward < ahead. The left gap is the smallest
+    left offset of any point on the left, the right gap the same on the
+    right. A side with no points gets cap. Returns (left_gap, right_gap).
+    """
+    left = cap
+    right = cap
+    for fx, fy in points:
+        if not 0.0 < fx < ahead:
+            continue
+        if fy >= 0:
+            left = min(left, fy)
+        else:
+            right = min(right, -fy)
+    return left, right
+
+
 def choose_side(left_free, right_free):
     """+1 to pass on the left, -1 to pass on the right. Ties go left."""
     return 1 if left_free >= right_free else -1

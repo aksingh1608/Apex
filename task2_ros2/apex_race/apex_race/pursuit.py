@@ -7,6 +7,21 @@ def wrap_angle(a):
     return math.atan2(math.sin(a), math.cos(a))
 
 
+def compose(a, b):
+    """SE(2) pose a then b. Poses are (x, y, yaw)."""
+    ax, ay, at = a
+    bx, by, bt = b
+    c, s = math.cos(at), math.sin(at)
+    return ax + c * bx - s * by, ay + s * bx + c * by, wrap_angle(at + bt)
+
+
+def inverse(a):
+    """Inverse of an SE(2) pose, so compose(a, inverse(a)) is (0, 0, 0)."""
+    x, y, t = a
+    c, s = math.cos(t), math.sin(t)
+    return -c * x - s * y, s * x - c * y, -t
+
+
 def to_robot_frame(px, py, x, y, yaw):
     """Express world point (px, py) in the frame of a robot at (x, y, yaw).
 

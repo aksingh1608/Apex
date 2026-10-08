@@ -63,3 +63,11 @@ def test_nearest_index_window():
 def test_wrap_angle():
     assert pp.wrap_angle(3 * math.pi) == pytest.approx(math.pi)
     assert pp.wrap_angle(-0.5) == pytest.approx(-0.5)
+
+
+def test_compose_and_inverse():
+    a = (1.0, -2.0, 0.7)
+    b = (0.3, 0.4, -1.2)
+    x, y, t = pp.compose(pp.compose(a, b), pp.inverse(b))
+    assert (x, y, t) == pytest.approx(a)
+    assert pp.compose(a, pp.inverse(a)) == pytest.approx((0.0, 0.0, 0.0), abs=1e-12)

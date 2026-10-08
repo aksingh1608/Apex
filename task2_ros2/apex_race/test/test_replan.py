@@ -69,3 +69,18 @@ def test_contact_counter_hysteresis():
     starts = [c.update(r) for r in seq]
     assert starts == [False, True, False, False, False, False, True]
     assert c.count == 2
+
+
+def test_lateral_gap_sees_cone_on_the_right():
+    # Walls 0.6 m to each side, a cone 0.1 m right of centre 0.6 m ahead.
+    pts = [(x / 10, 0.6) for x in range(1, 15)] + [(x / 10, -0.6) for x in range(1, 15)]
+    pts += [(0.6, -0.05), (0.62, -0.1), (0.6, -0.15)]
+    left, right = rp.lateral_gap(pts, 1.0, 1.0)
+    assert left == pytest.approx(0.6)
+    assert right == pytest.approx(0.05)
+    assert rp.choose_side(left, right) == 1
+
+
+def test_lateral_gap_ignores_points_behind_and_far():
+    pts = [(-0.3, 0.05), (2.0, -0.05)]
+    assert rp.lateral_gap(pts, 1.0, 0.8) == (0.8, 0.8)

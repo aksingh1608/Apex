@@ -1,7 +1,8 @@
 """Race controller: state machine, pure pursuit over waypoints, LiDAR avoidance.
 
 Inputs:  /<car>/odom, /<car>/scan, /apex/command (keys g p x r)
-Outputs: /<car>/cmd_vel, /apex/status (1 Hz), /apex/telemetry, /apex/events
+Outputs: /<car>/cmd_vel, /apex/status (1 Hz), /apex/telemetry, /apex/events,
+         /apex/path (the waypoints in use, sent again each time REPLAN shifts them)
 """
 
 import json
@@ -13,10 +14,10 @@ import rclpy
 from ament_index_python.packages import get_package_share_directory
 from gazebo_msgs.msg import EntityState
 from gazebo_msgs.srv import DeleteEntity, SetEntityState
-from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseStamped, Twist
+from nav_msgs.msg import Odometry, Path
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import DurabilityPolicy, QoSProfile, qos_profile_sensor_data
 from rclpy.signals import SignalHandlerOptions
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
@@ -68,6 +69,9 @@ class RaceController(Node):
         self.status_pub = self.create_publisher(String, "/apex/status", 10)
         self.telem_pub = self.create_publisher(String, "/apex/telemetry", 10)
         self.event_pub = self.create_publisher(String, "/apex/events", 50)
+        # Transient local, so RViz gets the current path even if it starts later.
+        latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.path_pub = self.create_publisher(Path, "/apex/path", latched)
         self.create_subscription(Odometry, ns + "/odom", self.on_odom, 20)
         self.create_subscription(LaserScan, ns + "/scan", self.on_scan, qos_profile_sensor_data)
         self.create_subscription(String, "/apex/command", self.on_command, 10)
@@ -96,6 +100,7 @@ class RaceController(Node):
         self.replan_side = None
         self.replan_tries = 0
 
+        self.publish_path()
         self.create_timer(1.0 / cfg["control_rate"], self.tick)
         self.create_timer(1.0 / cfg["status_rate"], self.publish_status)
         self.say("info", f"Race controller ready for car {cfg['car']}. "
@@ -258,6 +263,7 @@ class RaceController(Node):
         start = self.idx
         self.wps = replan.shift_waypoints(self.base_wps, start, cfg["replan_points"],
                                           offset, cfg["replan_ramp"])
+        self.publish_path()
         self.replan_end = (start + cfg["replan_points"]) % n
         word = "left" if side > 0 else "right"
         self.fire(sm.BLOCKED)
@@ -266,8 +272,23 @@ class RaceController(Node):
                          f"{abs(offset):.2f} m to the {word}.",
                  left_free=left, right_free=right, side=word)
 
+    def publish_path(self):
+        """Send the waypoints in use as a closed loop, in the odom frame."""
+        msg = Path()
+        msg.header.frame_id = "odom"
+        msg.header.stamp = self.get_clock().now().to_msg()
+        for x, y in self.wps + self.wps[:1]:
+            ps = PoseStamped()
+            ps.header.frame_id = "odom"
+            ps.pose.position.x = float(x)
+            ps.pose.position.y = float(y)
+            ps.pose.orientation.w = 1.0
+            msg.poses.append(ps)
+        self.path_pub.publish(msg)
+
     def end_replan(self):
         self.wps = list(self.base_wps)
+        self.publish_path()
         self.replan_end = None
         self.replan_side = None
 

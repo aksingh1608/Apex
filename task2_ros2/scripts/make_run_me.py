@@ -130,7 +130,7 @@ cd /ws && colcon build --symlink-install --base-paths src/apex/task2_ros2 && sou
 cd /ws/src/apex/task2_ros2
 ros2 launch apex_race race.launch.py player:=true
 ```
-Leave out `player:=true` for the one car version. Add `slam:=true` to build the 2D map as well.
+Leave out `player:=true` for the one car version. Add `slam:=true` to build the 2D map as well, and `slam:=true rviz:=true` to also open RViz with the live map, the scan and the racing line.
 
 **Terminal 2**, the keyboard:
 ```

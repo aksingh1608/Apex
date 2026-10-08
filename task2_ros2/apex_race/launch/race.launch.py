@@ -6,6 +6,8 @@ Arguments:
   drop_cone:=true|false  start drop_obstacle for the lap two cone (default true)
   runs_dir:=PATH         where the monitor writes runs/<timestamp>/
   slam:=true|false       build a 2D LiDAR map with slam_toolbox while the racer drives (default false)
+  rviz:=true|false       open RViz with the live map, scan, racing line and racer trail;
+                         needs slam:=true, which provides the map and odom frames (default false)
 """
 
 import os
@@ -13,8 +15,8 @@ import os
 import yaml
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction,
-                            SetEnvironmentVariable)
+from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription, LogInfo,
+                            OpaqueFunction, SetEnvironmentVariable)
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -52,6 +54,16 @@ def spawn_cars(context):
     return actions
 
 
+def start_rviz(context):
+    if LaunchConfiguration("rviz").perform(context).lower() != "true":
+        return []
+    if LaunchConfiguration("slam").perform(context).lower() != "true":
+        return [LogInfo(msg="rviz:=true needs slam:=true for the map and odom frames. RViz not started.")]
+    config = os.path.join(get_package_share_directory("apex_race"), "config", "apex_map.rviz")
+    return [Node(package="rviz2", executable="rviz2", name="rviz2", arguments=["-d", config],
+                 parameters=[{"use_sim_time": True}], output="log")]
+
+
 def generate_launch_description():
     share = get_package_share_directory("apex_race")
     tb3 = get_package_share_directory("turtlebot3_gazebo")
@@ -67,6 +79,7 @@ def generate_launch_description():
         DeclareLaunchArgument("drop_cone", default_value="true"),
         DeclareLaunchArgument("runs_dir", default_value=os.path.join(os.getcwd(), "runs")),
         DeclareLaunchArgument("slam", default_value="false"),
+        DeclareLaunchArgument("rviz", default_value="false"),
         SetEnvironmentVariable("GAZEBO_MODEL_PATH", model_path + (":" + old if old else "")),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(gazebo_ros, "launch", "gzserver.launch.py")),
@@ -92,4 +105,5 @@ def generate_launch_description():
         Node(package="slam_toolbox", executable="async_slam_toolbox_node", name="slam_toolbox",
              output="screen", parameters=[params],
              condition=IfCondition(LaunchConfiguration("slam"))),
+        OpaqueFunction(function=start_rviz),
     ])

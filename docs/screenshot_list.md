@@ -32,3 +32,4 @@ Use three terminals side by side with the Gazebo window. Terminal 1 runs the lau
 | `t2_run_folder.png` | After the race | A file browser or `ls` showing `runs/<timestamp>/` with events.csv, ticks.csv and summary.json |
 | `t2_rqt_graph.png` | During the race, from a second container shell: `rqt_graph` | The nodes and topics |
 | `t2_player_car.png` | Phase 3 run, while you drive the blue car in front of the racer | Gazebo with both cars, and terminal 1 showing the racer go to AVOID because of your car |
+| `t2_rviz_map.png` | During a run started with `slam:=true rviz:=true`, on lap 2 or 3 | The RViz window with the live map, the red LiDAR points, and the green racing line bent around the cone |

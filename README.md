@@ -46,7 +46,7 @@ Gazebo screenshots are taken by hand. See `docs/screenshot_list.md`.
 6. Press `g` to start. On lap 3 press `p`, wait, press `p` again. Drive the blue car with `w a s d`.
 7. After the race: `python3 scripts/analyze_run.py runs/<timestamp>`
 
-To build the 2D map as well, add `slam:=true` in step 4. Before you stop the launch, save the map from another container shell: `ros2 run nav2_map_server map_saver_cli -f runs/<timestamp>/map --ros-args -p use_sim_time:=true`. Then draw it: `python3 scripts/plot_map.py runs/<timestamp>`.
+To build the 2D map as well, add `slam:=true` in step 4. Add `rviz:=true` too to watch the map grow live in RViz (see [Live view in RViz](#live-view-in-rviz)). Before you stop the launch, save the map from another container shell: `ros2 run nav2_map_server map_saver_cli -f runs/<timestamp>/map --ros-args -p use_sim_time:=true`. Then draw it: `python3 scripts/plot_map.py runs/<timestamp>`.
 
 For a run with no window and scripted keys: `task2_ros2/docker/run.sh --headless`, then `docker exec apex bash -c 'source /opt/apex_env.sh && cd /ws && colcon build --symlink-install --base-paths src/apex/task2_ros2 && source install/setup.bash && cd src/apex/task2_ros2 && scripts/headless_run.sh'`. Add `player` to spawn the second car and `slam` to build and save the map, for example `scripts/headless_run.sh player slam`.
 
@@ -105,6 +105,9 @@ flowchart LR
   AUTO -. "/auto/scan, odom TF (slam:=true)" .-> SLAM["slam_toolbox"]
   SLAM -- "/map" --> SAVER["map_saver_cli"] --> MAP[("map.pgm, map.yaml")]
   MAP --> PM["scripts/plot_map.py"] --> MFIG["map figures"]
+  SLAM -. "/map" .-> RVIZ["rviz2 (rviz:=true)"]
+  RC -. "/apex/path" .-> RVIZ
+  AUTO -. "/auto/scan, /auto/odom" .-> RVIZ
 ```
 
 The race controller keeps all ROS code out of the maths. The pure modules are `state_machine.py`, `pursuit.py`, `laps.py`, `replan.py` and `track.py`. They have unit tests and run without ROS.
@@ -208,7 +211,8 @@ All tunable values live in `task2_ros2/apex_race/config/params.yaml`. The circui
 | `/apex/events` | std_msgs/String (JSON) | race_controller_node, drop_obstacle | monitor_node |
 | `/spawn_entity`, `/gazebo/set_entity_state`, `/delete_entity` | services | Gazebo | drop_obstacle, race_controller_node (reset) |
 | `/tf` (odom to base_footprint), `/tf_static` (base_footprint to base_scan) | TF, only with `slam:=true` | Gazebo, static_transform_publisher | slam_toolbox |
-| `/map` | nav_msgs/OccupancyGrid, only with `slam:=true` | slam_toolbox | map_saver_cli, `scripts/slam_offset.py` reads its `/tf` correction |
+| `/map` | nav_msgs/OccupancyGrid, only with `slam:=true` | slam_toolbox | map_saver_cli, rviz2 |
+| `/apex/path` | nav_msgs/Path, transient local, odom frame | race_controller_node, at start and each time REPLAN shifts or restores the waypoints | rviz2 |
 
 `/apex/status` carries state, lap, speed, distance, front range and race time.
 
@@ -279,6 +283,26 @@ What the runs show:
 * slam_toolbox never sees outside the walls. The walls are 0.3 m tall and the LiDAR sits 0.18 m up, so the grandstands, pit lane and the infield all stay grey (not seen).
 * The racer drives on the true pose from `/odom`, not on the map. The map is a product of the run, not an input to it.
 
+### Live view in RViz
+
+`ros2 launch apex_race race.launch.py slam:=true rviz:=true` opens RViz with `apex_race/config/apex_map.rviz`. It is a top-down view in the map frame with five layers:
+
+* **Live map:** `/map` from slam_toolbox, updated every 2 s.
+* **Racing line:** `/apex/path`, the waypoints the racer is following. In REPLAN you see the line bend around the obstacle, and it snaps back once the racer is past.
+* **LiDAR scan:** `/auto/scan` as red points.
+* **Racer trail:** poses from `/auto/odom` as orange arrows, one every 0.1 m or 0.3 rad, up to the last 300.
+* **Frames:** the map, odom, base_footprint and base_scan axes.
+
+`rviz:=true` needs `slam:=true`, because the map and odom frames come from slam_toolbox. Without it the launch prints a note and skips RViz.
+
+The screenshots below are real RViz frames from run `rviz_live_20261009`. I took them on a virtual screen (Xvfb) inside the container, because my shell has no access to the laptop screen. The racer ran the normal one car mission with scripted keys: 80.0, 92.1 and 92.3 s, 0 contact events (`summary.json` and `events.csv` are in the same folder).
+
+| Lap 1, map half built | Lap 2, REPLAN around the cone | Race over |
+|---|---|---|
+| ![rviz lap 1](task2_ros2/results/rviz_live_20261009/rviz_1_lap1.png) | ![rviz replan](task2_ros2/results/rviz_live_20261009/rviz_2_replan.png) | ![rviz end](task2_ros2/results/rviz_live_20261009/rviz_3_end.png) |
+
+In the lap 1 part of the trail you can see the SLAM drift from the table above. RViz places each trail arrow with the map to odom correction it had when that arrow arrived. During lap 1 that correction drifts by up to about 10 degrees, so those arrows sit off the racing line. After the loop closure at the start of lap 2, the new arrows sit close to the line again. The trail keeps only 300 arrows, so by the end most of lap 1 has dropped off.
+
 ## Tests
 
 * Task 1: `Restart and Run All` finishes with no errors. The notebook asserts that static poses match across captures, that the racer shows in all 9 images, and that every body id shows in at least one.
@@ -302,7 +326,7 @@ task2_ros2/
   docker/                Dockerfile, run.sh, exec.sh, entrypoint.sh, apex_env.sh
   apex_race/             the ROS 2 package
     apex_race/           nodes and pure modules
-    config/              params.yaml, circuit.yaml
+    config/              params.yaml, circuit.yaml, apex_map.rviz
     launch/              race.launch.py
     worlds/              apex_circuit.world (generated)
     test/                unit tests

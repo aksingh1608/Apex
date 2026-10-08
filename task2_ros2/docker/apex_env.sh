@@ -1,11 +1,10 @@
 #!/bin/bash
 # Sourced by the container entrypoint and by docker/exec.sh.
-# Humble setup reads AMENT_TRACE_SETUP_FILES before it exists.
+# The ROS setup scripts read unset variables, so do not run this with set -u.
 export TURTLEBOT3_MODEL="${TURTLEBOT3_MODEL:-burger}"
 export APEX_WS="${APEX_WS:-/ws}"
 export HOME="${HOME:-/tmp/apex-home}"
 mkdir -p "$HOME"
-set +u
 # shellcheck disable=SC1091
 source /opt/ros/humble/setup.bash
 # shellcheck disable=SC1091
@@ -14,4 +13,3 @@ if [ -f /ws/install/setup.bash ]; then
   # shellcheck disable=SC1091
   source /ws/install/setup.bash
 fi
-set -u

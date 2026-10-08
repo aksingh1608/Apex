@@ -42,7 +42,7 @@ Gazebo screenshots are taken by hand. See `docs/screenshot_list.md`.
 6. Press `g` to start. On lap 3 press `p`, wait, press `p` again. Drive the blue car with `w a s d`.
 7. After the race: `python3 scripts/analyze_run.py runs/<timestamp>`
 
-For a run with no window and scripted keys: `task2_ros2/docker/run.sh --headless`, then `docker exec apex bash -c 'source /opt/apex_env.sh && cd /ws && colcon build --symlink-install --base-paths src/apex/task2_ros2 && cd src/apex/task2_ros2 && scripts/headless_run.sh'`.
+For a run with no window and scripted keys: `task2_ros2/docker/run.sh --headless`, then `docker exec apex bash -c 'source /opt/apex_env.sh && cd /ws && colcon build --symlink-install --base-paths src/apex/task2_ros2 && source install/setup.bash && cd src/apex/task2_ros2 && scripts/headless_run.sh'`.
 
 ## Assignment mapping
 

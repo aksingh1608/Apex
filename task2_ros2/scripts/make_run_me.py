@@ -137,7 +137,7 @@ ros2 topic echo /apex/status
 3. On lap 2 the cone drops on the back straight. Watch AVOID and REPLAN in terminal 1.
 4. On lap 3 press `p` to pause. Wait a few seconds. Press `p` again to resume.
 5. After lap 3 the racer stops and terminal 1 prints the summary.
-6. Press `Ctrl+C` in terminal 1, then `q` in terminal 2.
+6. Press `Ctrl+C` in terminal 1, then `q` in terminal 2. The Gazebo window takes about 5 s to close: it ignores the first signal, and the launch then stops it.
 
 Other keys: `x` aborts the race, `r` resets it after it ends or while paused.
 

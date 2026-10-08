@@ -74,3 +74,9 @@ Each entry records an approach that failed, what broke, and what came next.
 - Tried: the headless driver sent the player car to its parking spot on the racing line while the race started.
 - Broke: run `20261008_211402`. Both cars left the grid together and drove side by side toward the racing line. The LiDAR range sat at its 0.12 m floor for about 2 s, which gave contact event 1 at 4.7 s. The racer only checks the corridor ahead, so it does not react to a car closing in from the side. Both later passes of the parked car went cleanly, with a lowest range of 0.251 m on the first one.
 - Next: the driver now parks the player car first and presses g after that, the way a person would set up the race. Side approach by another car stays a known limit of the racer.
+
+## 2026-10-08: Task 2, sourcing the workspace failed in one shell
+
+- Tried: a GUI smoke test that ran `source /opt/apex_env.sh`, then `colcon build`, then `source install/setup.bash`, all in one shell.
+- Broke: `install/setup.bash: line 11: COLCON_TRACE: unbound variable`. `apex_env.sh` (copied from the beacon pattern) ended with `set -u`, and the setup script reads unset variables. The same problem meant the README's one line headless command could not find `apex_race` on a fresh container. My earlier runs hid it, because I always built in a separate `docker exec` first.
+- Next: removed `set -u` from `apex_env.sh`, rebuilt the image, and added `source install/setup.bash` to the README command. I tested that command as written on a fresh container.

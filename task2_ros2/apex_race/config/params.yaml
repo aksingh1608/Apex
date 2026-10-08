@@ -39,7 +39,7 @@ race_controller_node:
 monitor_node:
   ros__parameters:
     use_sim_time: true
-    runs_dir: ""                  # empty means task2_ros2/runs next to the package source
+    runs_dir: ""                  # empty means ./runs; the launch file passes task2_ros2/runs
     car: auto
     contact_enter: 0.15           # m, lowest LiDAR range below this starts a contact
     contact_exit: 0.20            # m, the contact ends above this

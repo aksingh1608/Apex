@@ -1,0 +1,39 @@
+t,race_t,kind,state,lap,event,old,new,text
+0.0,0.0,info,IDLE,0,,,,"Race controller ready for car auto. 136 waypoints, 3 laps. Press g to start."
+16.0,0.0,transition,COUNTDOWN,0,start,IDLE,COUNTDOWN,Start key pressed. IDLE to COUNTDOWN.
+16.1,0.0,info,COUNTDOWN,0,,,,Countdown 3.
+17.0,0.0,info,COUNTDOWN,0,,,,Countdown 2.
+18.0,0.0,info,COUNTDOWN,0,,,,Countdown 1.
+19.0,0.0,transition,RACING,0,countdown_done,COUNTDOWN,RACING,Countdown over. COUNTDOWN to RACING.
+19.0,0.0,info,RACING,0,,,,Go.
+21.9,2.9,lap,RACING,1,,,,Start line crossed. Lap 1 begins.
+23.7,4.7,transition,AVOID,1,obstacle,RACING,AVOID,Obstacle 0.58 m ahead. RACING to AVOID.
+24.7,5.7,transition,REPLAN,1,blocked,AVOID,REPLAN,Obstacle still 0.57 m ahead after the hold time. AVOID to REPLAN.
+24.7,5.7,info,REPLAN,1,,,,"Free space left 0.48 m, right 0.44 m. Shifting the next 22 waypoints 0.30 m to the left."
+44.7,25.7,transition,RACING,1,passed,REPLAN,RACING,Racer is past the obstacle. REPLAN to RACING.
+111.6,92.6,lap,RACING,2,,,,Lap 1 done in 89.7 s.
+111.6,92.6,lap,RACING,2,,,,Lap 2 begins.
+113.1,94.1,transition,AVOID,2,obstacle,RACING,AVOID,Obstacle 0.57 m ahead. RACING to AVOID.
+114.1,95.1,transition,REPLAN,2,blocked,AVOID,REPLAN,Obstacle still 0.56 m ahead after the hold time. AVOID to REPLAN.
+114.1,95.1,info,REPLAN,2,,,,"Free space left 0.54 m, right 0.54 m. Shifting the next 22 waypoints 0.30 m to the right."
+121.6,102.6,obstacle,REPLAN,2,,,,"Cone dropped at (0.00, 1.30) on lap 2."
+136.9,117.9,transition,RACING,2,passed,REPLAN,RACING,Racer is past the obstacle. REPLAN to RACING.
+159.1,140.1,transition,AVOID,2,obstacle,RACING,AVOID,Obstacle 0.60 m ahead. RACING to AVOID.
+160.1,141.1,transition,REPLAN,2,blocked,AVOID,REPLAN,Obstacle still 0.59 m ahead after the hold time. AVOID to REPLAN.
+160.1,141.1,info,REPLAN,2,,,,"Free space left 0.63 m, right 0.42 m. Shifting the next 22 waypoints 0.30 m to the left."
+180.8,161.8,transition,RACING,2,passed,REPLAN,RACING,Racer is past the obstacle. REPLAN to RACING.
+214.8,195.8,lap,RACING,3,,,,Lap 2 done in 103.2 s.
+214.8,195.8,lap,RACING,3,,,,Lap 3 begins.
+216.3,197.3,transition,AVOID,3,obstacle,RACING,AVOID,Obstacle 0.58 m ahead. RACING to AVOID.
+217.3,198.3,transition,REPLAN,3,blocked,AVOID,REPLAN,Obstacle still 0.56 m ahead after the hold time. AVOID to REPLAN.
+217.3,198.3,info,REPLAN,3,,,,"Free space left 0.54 m, right 0.53 m. Shifting the next 22 waypoints 0.30 m to the left."
+236.2,217.2,transition,RACING,3,passed,REPLAN,RACING,Racer is past the obstacle. REPLAN to RACING.
+236.2,217.2,transition,PAUSED,3,pause,RACING,PAUSED,Pause key pressed. RACING to PAUSED.
+241.2,217.2,transition,RACING,3,resume,PAUSED,RACING,Resume key pressed. PAUSED to RACING.
+265.9,241.9,transition,AVOID,3,obstacle,RACING,AVOID,Obstacle 0.58 m ahead. RACING to AVOID.
+266.9,242.9,transition,REPLAN,3,blocked,AVOID,REPLAN,Obstacle still 0.56 m ahead after the hold time. AVOID to REPLAN.
+266.9,242.9,info,REPLAN,3,,,,"Free space left 0.63 m, right 0.41 m. Shifting the next 22 waypoints 0.30 m to the left."
+288.1,264.1,transition,RACING,3,passed,REPLAN,RACING,Racer is past the obstacle. REPLAN to RACING.
+321.5,297.5,lap,RACING,3,,,,Lap 3 done in 101.7 s.
+321.5,297.5,transition,FINISHED,3,laps_done,RACING,FINISHED,All laps done. RACING to FINISHED.
+321.5,297.5,info,FINISHED,3,,,,"Race finished. 3 laps in 297.5 s of race time. Lap times: 89.7 s, 103.2 s, 101.7 s. Distance 41.76 m."

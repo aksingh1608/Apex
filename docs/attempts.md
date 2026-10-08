@@ -68,3 +68,9 @@ Each entry records an approach that failed, what broke, and what came next.
 - Tried: the free space measure and a 0.30 m shift, with the normal 0.45 m pure pursuit lookahead in REPLAN.
 - Broke: run `20261008_210502`. The free space read 0.53 m on each side, which was right, but the racer was only 0.15 m off the centre line when it drew level with the parked car. Pure pursuit with a 0.45 m lookahead closes a sideways gap over about a metre, and the racer stops only about 0.6 m before the obstacle. The range fell to 0.141 m (contact events 1 to 3). Each new REPLAN then hit the 0.15 m safety band at once, so it looped beside the car until I aborted at 137 s. The cone runs never showed this, because the cone sits 0.1 m toward the other side.
 - Next: a 0.25 m lookahead in REPLAN, so the racer reaches the shifted line sooner. Each repeat REPLAN for the same obstacle widens the shift by 0.04 m, up to 0.38 m.
+
+## 2026-10-08: Task 2, the scripted player car squeezed the racer at the start
+
+- Tried: the headless driver sent the player car to its parking spot on the racing line while the race started.
+- Broke: run `20261008_211402`. Both cars left the grid together and drove side by side toward the racing line. The LiDAR range sat at its 0.12 m floor for about 2 s, which gave contact event 1 at 4.7 s. The racer only checks the corridor ahead, so it does not react to a car closing in from the side. Both later passes of the parked car went cleanly, with a lowest range of 0.251 m on the first one.
+- Next: the driver now parks the player car first and presses g after that, the way a person would set up the race. Side approach by another car stays a known limit of the racer.

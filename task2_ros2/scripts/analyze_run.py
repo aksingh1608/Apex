@@ -82,7 +82,7 @@ def segments_by_state(rows):
     return seg
 
 
-def fig_path(rows, events, circuit, out):
+def fig_path(rows, events, circuit, out, player=None):
     fig, ax = plt.subplots(figsize=(8, 5.2))
     draw_track(ax, circuit)
     seg = segments_by_state(rows)
@@ -105,6 +105,9 @@ def fig_path(rows, events, circuit, out):
         if cfg_x is not None:
             ax.plot(cfg_x, cfg_y, marker="^", ms=12, color="#ff6f00", mec="k", ls="none",
                     label="dropped cone")
+    if player is not None:
+        ax.plot(player[0], player[1], marker="s", ms=10, color="#1565c0", mec="k", ls="none",
+                label="parked player car")
     ax.set_aspect("equal")
     ax.set_xlabel("x (m)")
     ax.set_ylabel("y (m)")
@@ -225,6 +228,8 @@ def main():
     ap.add_argument("run", type=Path)
     ap.add_argument("--out", type=Path)
     ap.add_argument("--circuit", default=str(PKG / "config" / "circuit.yaml"))
+    ap.add_argument("--player", type=float, nargs=2, metavar=("X", "Y"),
+                    help="mark where the player car was parked")
     ap.add_argument("--params", default=str(PKG / "config" / "params.yaml"))
     args = ap.parse_args()
     with open(args.params) as f:
@@ -234,7 +239,7 @@ def main():
     ticks, events, summary = load(args.run)
     rows = race_ticks(ticks)
     circuit = track.load_circuit(args.circuit)
-    fig_path(rows, events, circuit, out)
+    fig_path(rows, events, circuit, out, args.player)
     fig_timeline(rows, out)
     fig_speed(rows, out)
     fig_front(rows, out, avoid)

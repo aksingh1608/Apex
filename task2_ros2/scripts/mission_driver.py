@@ -6,7 +6,8 @@ x > pause_x on the front straight of lap 3, and p (resume) pause_s seconds
 later. It exits when the race finishes or aborts.
 
 With --park X Y it also stands in for the person on the player car: it
-drives the player car to (X, Y) and parks it there, using /player/odom.
+drives the player car to (X, Y) and parks it there, using /player/odom,
+and only then presses g.
 
 Run inside the container:  python3 scripts/mission_driver.py
 For the recorded run, press the keys yourself with keyboard_node instead.
@@ -78,7 +79,7 @@ class Driver(Node):
     def on_telem(self, msg):
         t = json.loads(msg.data)
         st = t["state"]
-        if not self.started and st == "IDLE":
+        if not self.started and st == "IDLE" and (not self.park or self.parked):
             self.started = True
             self.key("g")
         elif (self.paused_at is None and t["lap"] == self.args.pause_lap and

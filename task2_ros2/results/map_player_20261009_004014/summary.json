@@ -1,0 +1,21 @@
+{
+  "final_state": "FINISHED",
+  "laps_completed": 3,
+  "lap_times_s": [
+    89.7,
+    103.7,
+    103.5
+  ],
+  "best_lap_s": 89.7,
+  "total_race_time_s": 299.8,
+  "distance_m": 42.11,
+  "contact_events": 0,
+  "lowest_clearance_m": 0.251,
+  "avoid_count": 6,
+  "replan_count": 5,
+  "pause_count": 1,
+  "state_transitions": 22,
+  "contact_definition": "lowest valid LiDAR range below 0.15 m, ends above 0.2 m",
+  "run_dir": "/ws/src/apex/task2_ros2/runs/20261009_004014",
+  "wall_clock_s": 324.9
+}

@@ -2,13 +2,14 @@
 
 The copy keeps every sensor and plugin. It adds a coloured roof plate and
 a rear wing (visual only, so the LiDAR rays pass through) and turns off the
-odom TF, so two cars do not publish the same TF frames.
+odom TF, so two cars do not publish the same TF frames. With odom_tf=True
+one car keeps its odom TF, which the 2D mapping needs.
 """
 
 from apex_race.props import geometry, material
 
 
-def coloured_burger(sdf_text, model_name, rgb):
+def coloured_burger(sdf_text, model_name, rgb, odom_tf=False):
     if '<link name="base_link">' not in sdf_text:
         raise ValueError("base_link not found in the Burger SDF")
     plate = (f'<visual name="apex_roof"><pose>-0.032 0 0.205 0 0 0</pose>'
@@ -17,6 +18,7 @@ def coloured_burger(sdf_text, model_name, rgb):
              f"{geometry('box', (0.03, 0.17, 0.012))}{material(rgb)}</visual>")
     out = sdf_text.replace('<link name="base_link">', '<link name="base_link">' + plate, 1)
     out = out.replace('<model name="turtlebot3_burger">', f'<model name="{model_name}">', 1)
-    out = out.replace("<publish_odom_tf>true</publish_odom_tf>",
-                      "<publish_odom_tf>false</publish_odom_tf>")
+    if not odom_tf:
+        out = out.replace("<publish_odom_tf>true</publish_odom_tf>",
+                          "<publish_odom_tf>false</publish_odom_tf>")
     return out

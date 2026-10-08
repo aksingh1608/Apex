@@ -1,6 +1,6 @@
 # Apex
 
-Apex is my robotics coursework, built around one racing theme. Task 1 is a PyBullet notebook. It builds a race circuit from eight URDF models and a two-wheel racer. It drives the racer to three poses with its wheel motors and checks the scene with three cameras and segmentation masks. Task 2 is a ROS 2 Humble time trial in Gazebo Classic, in Docker. A TurtleBot3 Burger runs three laps of a generated circuit, using pure pursuit over waypoints. It uses its LiDAR to stop for obstacles and plan a way around them. A second Burger is driven from the keyboard. A monitor node logs every state change with a plain sentence and writes the metrics of each run to disk.
+Apex is my robotics coursework, built around one racing theme. Task 1 is a PyBullet notebook. It builds a race circuit from eight URDF models and a two-wheel racer. It drives the racer to three poses with its wheel motors and checks the scene with three cameras and segmentation masks. Task 2 is a ROS 2 Humble time trial in Gazebo Classic, in Docker. A TurtleBot3 Burger runs three laps of a generated circuit, using pure pursuit over waypoints. It uses its LiDAR to stop for obstacles and plan a way around them, and slam_toolbox can build a 2D map of the circuit from the same LiDAR. A second Burger is driven from the keyboard. A monitor node logs every state change with a plain sentence and writes the metrics of each run to disk.
 
 ## Pictures from a real run
 
@@ -17,6 +17,10 @@ Two car run: the racer passes the parked player car (blue square) on every lap a
 ![state timeline](task2_ros2/results/one_car_20261008_210907/figures/state_timeline.png)
 ![speed](task2_ros2/results/one_car_20261008_210907/figures/speed.png)
 ![front range](task2_ros2/results/one_car_20261008_210907/figures/front_range.png)
+
+2D LiDAR map built by slam_toolbox during a two car run. The black dot on the back straight is the cone, and the one on the front straight is the parked player car. See [2D LiDAR map](#2d-lidar-map).
+
+![lidar map](task2_ros2/results/map_player_20261009_004014/figures/map.png)
 
 Gazebo screenshots are taken by hand. See `docs/screenshot_list.md`.
 
@@ -42,7 +46,9 @@ Gazebo screenshots are taken by hand. See `docs/screenshot_list.md`.
 6. Press `g` to start. On lap 3 press `p`, wait, press `p` again. Drive the blue car with `w a s d`.
 7. After the race: `python3 scripts/analyze_run.py runs/<timestamp>`
 
-For a run with no window and scripted keys: `task2_ros2/docker/run.sh --headless`, then `docker exec apex bash -c 'source /opt/apex_env.sh && cd /ws && colcon build --symlink-install --base-paths src/apex/task2_ros2 && source install/setup.bash && cd src/apex/task2_ros2 && scripts/headless_run.sh'`.
+To build the 2D map as well, add `slam:=true` in step 4. Before you stop the launch, save the map from another container shell: `ros2 run nav2_map_server map_saver_cli -f runs/<timestamp>/map --ros-args -p use_sim_time:=true`. Then draw it: `python3 scripts/plot_map.py runs/<timestamp>`.
+
+For a run with no window and scripted keys: `task2_ros2/docker/run.sh --headless`, then `docker exec apex bash -c 'source /opt/apex_env.sh && cd /ws && colcon build --symlink-install --base-paths src/apex/task2_ros2 && source install/setup.bash && cd src/apex/task2_ros2 && scripts/headless_run.sh'`. Add `player` to spawn the second car and `slam` to build and save the map, for example `scripts/headless_run.sh player slam`.
 
 ## Assignment mapping
 
@@ -96,6 +102,9 @@ flowchart LR
   RC -. "/apex/telemetry" .-> DROP["drop_obstacle"]
   DROP -- "/spawn_entity" --> CONE
   FILES --> AN["scripts/analyze_run.py"] --> FIG["5 figures"]
+  AUTO -. "/auto/scan, odom TF (slam:=true)" .-> SLAM["slam_toolbox"]
+  SLAM -- "/map" --> SAVER["map_saver_cli"] --> MAP[("map.pgm, map.yaml")]
+  MAP --> PM["scripts/plot_map.py"] --> MFIG["map figures"]
 ```
 
 The race controller keeps all ROS code out of the maths. The pure modules are `state_machine.py`, `pursuit.py`, `laps.py`, `replan.py` and `track.py`. They have unit tests and run without ROS.
@@ -198,6 +207,8 @@ All tunable values live in `task2_ros2/apex_race/config/params.yaml`. The circui
 | `/apex/telemetry` | std_msgs/String (JSON), 10 Hz | race_controller_node | monitor_node, drop_obstacle |
 | `/apex/events` | std_msgs/String (JSON) | race_controller_node, drop_obstacle | monitor_node |
 | `/spawn_entity`, `/gazebo/set_entity_state`, `/delete_entity` | services | Gazebo | drop_obstacle, race_controller_node (reset) |
+| `/tf` (odom to base_footprint), `/tf_static` (base_footprint to base_scan) | TF, only with `slam:=true` | Gazebo, static_transform_publisher | slam_toolbox |
+| `/map` | nav_msgs/OccupancyGrid, only with `slam:=true` | slam_toolbox | map_saver_cli, `scripts/slam_offset.py` reads its `/tf` correction |
 
 `/apex/status` carries state, lap, speed, distance, front range and race time.
 
@@ -223,14 +234,14 @@ The mission repeats closely. A second one car run, on a fresh container from the
 What happened in the one car run:
 
 * Lap 1 had nothing on the track and took 80.0 s. Speed was 0.22 m/s on the straights and about 0.147 m/s in the turns, as the curvature rule predicts.
-* On lap 2, at 87.5 s, the cone dropped on the back straight at (0.00, 1.30), 0.1 m toward the outer wall. At 119.5 s the log reads `Obstacle 0.58 m ahead. RACING to AVOID.` One second later the cone was still there: `AVOID to REPLAN`, then `Free space left 0.63 m, right 0.42 m. Shifting the next 22 waypoints 0.30 m to the left.` The racer passed inside the cone and returned to RACING at 141.6 s.
-* The cone stays on the track, so lap 3 had the same pass, with the same readings (0.63 m left, 0.42 m right).
+* On lap 2, at 87.5 s, the cone dropped on the back straight at (0.00, 1.30), 0.1 m toward the outer wall. At 119.5 s the log reads `Obstacle 0.58 m ahead. RACING to AVOID.` One second later the cone was still there: `AVOID to REPLAN`, then `Free space left 0.63 m, right 0.41 m. Shifting the next 22 waypoints 0.30 m to the left.` The racer passed inside the cone and returned to RACING at 141.6 s.
+* The cone stays on the track, so lap 3 had the same pass, with almost the same readings (0.63 m left, 0.42 m right).
 * At the start of lap 3 the pause key put the racer in PAUSED, and the resume key 5 s later put it back in RACING. Race time does not count paused time.
 
 What happened in the two car run:
 
 * The player car was parked at (0.96, -1.19), on the racing line just after the finish line, before the start key.
-* The racer met it on every lap. The free space read about 0.54 m on each side, and it passed twice on the left and once on the right. The racer also passed the cone on laps 2 and 3. Every pass ended in RACING, and no contact event happened.
+* The racer met it on every lap. The free space read 0.48 m left and 0.44 m right on lap 1, and about 0.54 m on each side on laps 2 and 3. It passed on the left, then the right, then the left. The racer also passed the cone on laps 2 and 3. Every pass ended in RACING, and no contact event happened.
 * Three earlier player car runs went wrong. In one the racer touched the parked car twice. In one it touched the car three times and then got wedged beside it. In one the scripted player car squeezed it at the start. Each is in `docs/attempts.md`, with the fix that followed.
 
 Known limits:
@@ -239,11 +250,41 @@ Known limits:
 * Odometry here is the Gazebo diff drive plugin's default world based odometry, so `/odom` has no drift. On a real Burger, wheel odometry drifts, and the lap timing and pure pursuit would need a localisation source.
 * Contact events come from the LiDAR, not from a bumper sensor. A touch below the LiDAR plane, for example by a wheel, is only seen as a low range.
 
+## 2D LiDAR map
+
+With `slam:=true` the launch also starts slam_toolbox (online async mode). It builds a 2D occupancy map from the racer's LiDAR while the racer drives the normal mission. The settings are in the `slam_toolbox` section of `params.yaml`: 2.5 cm cells, 3.5 m range (the Burger LiDAR's limit), and a new scan every 0.2 m or 0.3 rad. The other scan matcher settings are slam_toolbox's defaults. The headless script saves the map at the end with `map_saver_cli`.
+
+Two checks make the map honest:
+
+* **Against the real walls.** `scripts/plot_map.py` takes every occupied cell and measures its distance to the nearest wall face from `circuit.yaml`. Cells more than 15 cm from both walls are grouped and listed as other objects.
+* **Against the true pose.** `/odom` here is Gazebo's true pose, so the map frame should sit exactly on the odom frame. `scripts/slam_offset.py` records slam_toolbox's map to odom correction during the run. That correction is the SLAM pose error.
+
+| Run | Cars | Occupied cells within 5 cm of a wall | Median / 95th percentile distance | Other objects found (15 cm or more off the walls, 5+ cells) | Largest SLAM pose error |
+|---|---|---|---|---|---|
+| `map_one_car_20261009_002750` | 1 | 89% (2300 of 2588) | 2.1 cm / 5.7 cm | cone at (0.03, 1.26) | not recorded |
+| `map_one_car_20261009_004641` | 1 | 72% (2118 of 2926) | 3.3 cm / 7.8 cm | cone at (0.02, 1.24) | 11.6 cm, 11.8 deg |
+| `map_player_20261009_003315` | 2 | 56% (1941 of 3450) | 4.1 cm / 21.4 cm | cone, player car, and smeared turn walls | not recorded |
+| `map_player_20261009_004014` | 2 | 77% (2172 of 2832) | 2.8 cm / 8.2 cm | cone at (0.07, 1.26), player car at (0.94, -1.19) | 9.7 cm, 9.6 deg |
+
+The cone really landed at (0.00, 1.30) and the player car was parked at (0.96, -1.19). The centres of the matching map cells sit 2 to 8 cm from those points. The LiDAR only sees the side of each object that faces the racer, so those centres sit a little toward the track. The free track area in the maps is 15.1 to 15.4 m².
+
+![map against walls](task2_ros2/results/map_player_20261009_004014/figures/map_vs_walls.png)
+![slam error](task2_ros2/results/map_one_car_20261009_004641/figures/slam_error.png)
+
+What the runs show:
+
+* In both runs with the error recorder, the heading error grows to about 10 to 12 degrees during lap 1. A loop closure as lap 2 begins pulls it back to under 1 degree and 1 cm. For the rest of the race the error stays under 3.7 degrees and 9.5 cm.
+* Map quality changes from run to run. Run `003315` drifted more in lap 1, and its outer walls in both turns came out thick and doubled, up to about 0.25 m inside the real face. I did not tune the scan matcher to hide this.
+* The racing does not change with mapping on. The one car mapping runs gave 80.0, 92.1 and 92.3 s and 80.0, 92.1 and 92.4 s, with 0 contact events, the same as without it.
+* slam_toolbox never sees outside the walls. The walls are 0.3 m tall and the LiDAR sits 0.18 m up, so the grandstands, pit lane and the infield all stay grey (not seen).
+* The racer drives on the true pose from `/odom`, not on the map. The map is a product of the run, not an input to it.
+
 ## Tests
 
 * Task 1: `Restart and Run All` finishes with no errors. The notebook asserts that static poses match across captures, that the racer shows in all 9 images, and that every body id shows in at least one.
-* Task 2: 39 unit tests for the pure modules (`cd task2_ros2/apex_race && python3 -m pytest -q test`). They cover the transition table, the curvature formula against a known circle, the speed curve, finish line crossings and their direction, the free space measure, the waypoint shift, and the contact counter.
-* Task 2 end to end: `scripts/headless_run.sh` runs the full mission with no window and scripted keys.
+* Task 2: 42 unit tests for the pure modules (`cd task2_ros2/apex_race && python3 -m pytest -q test`). They cover the transition table, the curvature formula against a known circle, the speed curve, finish line crossings and their direction, the free space measure, the waypoint shift, the contact counter, and the robot model's odom TF switch for mapping.
+* Task 2 end to end: `scripts/headless_run.sh` runs the full mission with no window and scripted keys. `scripts/headless_run.sh slam` also builds the map and saves it.
+* Figures: I redrew every committed figure from its saved run files (`analyze_run.py`, `plot_map.py`) and re-ran the Task 1 notebook from scratch. All 10 Task 2 figures and all 4 Task 1 figures came out byte for byte the same as the committed ones.
 
 ## Layout
 
@@ -266,7 +307,8 @@ task2_ros2/
     worlds/              apex_circuit.world (generated)
     test/                unit tests
   world_gen/             generate_world.py
-  scripts/               analyze_run.py, headless_run.sh, mission_driver.py, make_run_me.py
+  scripts/               analyze_run.py, plot_map.py, slam_offset.py, headless_run.sh,
+                         mission_driver.py, make_run_me.py
   results/               the runs used in this README
   runs/                  every run (not committed)
 ```

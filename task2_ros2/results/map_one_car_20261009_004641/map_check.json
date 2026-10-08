@@ -1,0 +1,29 @@
+{
+  "map_size_m": [
+    6.62,
+    3.7
+  ],
+  "resolution_m": 0.025,
+  "free_area_m2": 15.27,
+  "occupied_cells": 2926,
+  "occupied_within_near_of_a_wall_face": 2118,
+  "near_m": 0.05,
+  "share_on_wall": 0.724,
+  "median_distance_to_wall_face_m": 0.033,
+  "p95_distance_to_wall_face_m": 0.078,
+  "max_distance_to_wall_face_m": 0.592,
+  "far_m": 0.15,
+  "objects_off_the_walls": [
+    {
+      "cells": 15,
+      "x": 0.02,
+      "y": 1.24
+    }
+  ],
+  "slam_pose_error": {
+    "max_position_error_m": 0.116,
+    "final_position_error_m": 0.01,
+    "max_abs_heading_error_deg": 11.8,
+    "final_heading_error_deg": -0.5
+  }
+}

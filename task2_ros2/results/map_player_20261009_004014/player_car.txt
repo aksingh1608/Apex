@@ -1,0 +1,1 @@
+Player car parked at (0.96, -1.19) by scripts/mission_driver.py before the start key.

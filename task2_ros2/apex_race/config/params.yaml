@@ -62,3 +62,17 @@ drop_obstacle:
     cone_x: 0.0                   # where the cone lands (back straight)
     cone_y: 1.3                   # 0.1 m toward the outer wall from the centre line
     drop_height: 0.25
+
+slam_toolbox:                     # 2D LiDAR mapping, only with slam:=true
+  ros__parameters:                # keys not listed keep the slam_toolbox defaults
+    use_sim_time: true
+    mode: mapping
+    scan_topic: /auto/scan
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_footprint
+    resolution: 0.025             # m per map cell; the track is only 1.2 m wide
+    max_laser_range: 3.5          # m, the Burger LiDAR's real limit
+    minimum_travel_distance: 0.2  # m driven between scans added to the map
+    minimum_travel_heading: 0.3   # rad turned between scans added to the map
+    map_update_interval: 2.0      # s between /map updates

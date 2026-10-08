@@ -80,3 +80,21 @@ Each entry records an approach that failed, what broke, and what came next.
 - Tried: a GUI smoke test that ran `source /opt/apex_env.sh`, then `colcon build`, then `source install/setup.bash`, all in one shell.
 - Broke: `install/setup.bash: line 11: COLCON_TRACE: unbound variable`. `apex_env.sh` (copied from the beacon pattern) ended with `set -u`, and the setup script reads unset variables. The same problem meant the README's one line headless command could not find `apex_race` on a fresh container. My earlier runs hid it, because I always built in a separate `docker exec` first.
 - Next: removed `set -u` from `apex_env.sh`, rebuilt the image, and added `source install/setup.bash` to the README command. I tested that command as written on a fresh container.
+
+## 2026-10-09: Task 2, the map check counted unseen cells as free
+
+- Tried: read the saved `map.pgm` with the thresholds in its own `map.yaml` (occupied above 0.65, free below 0.25), the way map_server loads it.
+- Broke: run `20261009_002750`. The check reported 22.9 m² of free space, but the track between the walls is only about 16 m². The figure showed the infield and the area outside the walls as white. `map_saver_cli` writes unseen cells as grey value 205, which is 0.196 on that scale, so they fell under the 0.25 free threshold.
+- Next: for a trinary map, read the pixel codes directly: 0 occupied, 254 free, 205 unknown. The free space is now 15.4 m², and the infield and the outside show grey.
+
+## 2026-10-09: Task 2, the two car map came out smeared in the turns
+
+- Tried: the same slam_toolbox settings that gave a clean one car map (run `20261009_002750`, median 2.1 cm from the walls), on the two car mission.
+- Broke: run `20261009_003315`. The outer wall in both turns came out thick and doubled, up to about 0.25 m inside the real wall face. Only 56% of the occupied cells were within 5 cm of a wall (89% in the one car map). I could not say why from the map alone.
+- Next: `scripts/slam_offset.py` records slam_toolbox's map to odom correction. `/odom` here is the true pose, so that correction is the SLAM pose error. The repeat two car run `20261009_004014` showed the error grow to 9.7 cm and 9.6 degrees during lap 1, and drop to under 1 cm and 1 degree at a loop closure as lap 2 began. Its map was much cleaner (77% within 5 cm). A new one car run `20261009_004641` showed the same pattern (11.6 cm and 11.8 degrees in lap 1, 72% within 5 cm). So map quality changes from run to run, not between one car and two cars: it depends on how far the heading drifts before the first loop closure. I kept the default scan matcher settings, so the maps show what slam_toolbox really does.
+
+## 2026-10-09: Task 2, the headless script left the launch running
+
+- Tried: stop the SLAM error recorder in the exit trap with `[ -n "$OFFSET" ] && kill -INT "$OFFSET"`.
+- Broke: run `20261009_004014`. The recorder had already stopped, so `kill` failed. Under `set -e`, a failed last command in an `&&` list ends the shell, so the trap quit before it stopped the launch. gzserver, slam_toolbox and the race nodes were still running after the script exited with code 1.
+- Next: stopped them by hand, and wrote the line as an `if` with `|| true`.

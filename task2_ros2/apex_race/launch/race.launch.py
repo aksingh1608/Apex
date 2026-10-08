@@ -5,6 +5,7 @@ Arguments:
   player:=true|false     spawn the second car for the keyboard (default false)
   drop_cone:=true|false  start drop_obstacle for the lap two cone (default true)
   runs_dir:=PATH         where the monitor writes runs/<timestamp>/
+  slam:=true|false       build a 2D LiDAR map with slam_toolbox while the racer drives (default false)
 """
 
 import os
@@ -31,6 +32,7 @@ def spawn_cars(context):
         burger = f.read()
     with open(os.path.join(share, "config", "circuit.yaml")) as f:
         grid = yaml.safe_load(f)["grid"]
+    slam = LaunchConfiguration("slam").perform(context).lower() == "true"
     cars = ["auto"]
     if LaunchConfiguration("player").perform(context).lower() == "true":
         cars.append("player")
@@ -38,7 +40,8 @@ def spawn_cars(context):
     for car in cars:
         path = f"/tmp/apex_{car}.sdf"
         with open(path, "w") as f:
-            f.write(coloured_burger(burger, car, COLOURS[car]))
+            # Only the racer publishes odom TF, and only when slam_toolbox needs it.
+            f.write(coloured_burger(burger, car, COLOURS[car], odom_tf=slam and car == "auto"))
         g = grid[car]
         actions.append(Node(
             package="gazebo_ros", executable="spawn_entity.py", name=f"spawn_{car}",
@@ -63,6 +66,7 @@ def generate_launch_description():
         DeclareLaunchArgument("player", default_value="false"),
         DeclareLaunchArgument("drop_cone", default_value="true"),
         DeclareLaunchArgument("runs_dir", default_value=os.path.join(os.getcwd(), "runs")),
+        DeclareLaunchArgument("slam", default_value="false"),
         SetEnvironmentVariable("GAZEBO_MODEL_PATH", model_path + (":" + old if old else "")),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(gazebo_ros, "launch", "gzserver.launch.py")),
@@ -78,4 +82,14 @@ def generate_launch_description():
         Node(package="apex_race", executable="drop_obstacle", output="screen",
              parameters=[params],
              condition=IfCondition(LaunchConfiguration("drop_cone"))),
+        # 2D mapping. The LiDAR sits 0.032 m behind and 0.181 m above base_footprint
+        # (base_joint plus lidar_joint in the Burger SDF).
+        Node(package="tf2_ros", executable="static_transform_publisher", name="scan_tf",
+             arguments=["--x", "-0.032", "--z", "0.181",
+                        "--frame-id", "base_footprint", "--child-frame-id", "base_scan"],
+             parameters=[{"use_sim_time": True}],
+             condition=IfCondition(LaunchConfiguration("slam"))),
+        Node(package="slam_toolbox", executable="async_slam_toolbox_node", name="slam_toolbox",
+             output="screen", parameters=[params],
+             condition=IfCondition(LaunchConfiguration("slam"))),
     ])

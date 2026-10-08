@@ -1,0 +1,23 @@
+{
+  "map_size_m": [
+    6.62,
+    3.7
+  ],
+  "resolution_m": 0.025,
+  "free_area_m2": 15.4,
+  "occupied_cells": 2588,
+  "occupied_within_near_of_a_wall_face": 2300,
+  "near_m": 0.05,
+  "share_on_wall": 0.889,
+  "median_distance_to_wall_face_m": 0.021,
+  "p95_distance_to_wall_face_m": 0.057,
+  "max_distance_to_wall_face_m": 0.582,
+  "far_m": 0.15,
+  "objects_off_the_walls": [
+    {
+      "cells": 17,
+      "x": 0.03,
+      "y": 1.26
+    }
+  ]
+}

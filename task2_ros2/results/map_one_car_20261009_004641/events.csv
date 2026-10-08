@@ -1,0 +1,27 @@
+t,race_t,kind,state,lap,event,old,new,text
+0.0,0.0,info,IDLE,0,,,,"Race controller ready for car auto. 136 waypoints, 3 laps. Press g to start."
+1.6,0.0,transition,COUNTDOWN,0,start,IDLE,COUNTDOWN,Start key pressed. IDLE to COUNTDOWN.
+1.7,0.0,info,COUNTDOWN,0,,,,Countdown 3.
+2.6,0.0,info,COUNTDOWN,0,,,,Countdown 2.
+3.6,0.0,info,COUNTDOWN,0,,,,Countdown 1.
+4.6,0.0,transition,RACING,0,countdown_done,COUNTDOWN,RACING,Countdown over. COUNTDOWN to RACING.
+4.6,0.0,info,RACING,0,,,,Go.
+7.5,2.9,lap,RACING,1,,,,Start line crossed. Lap 1 begins.
+87.5,82.9,lap,RACING,2,,,,Lap 1 done in 80.0 s.
+87.5,82.9,lap,RACING,2,,,,Lap 2 begins.
+92.1,87.5,obstacle,RACING,2,,,,"Cone dropped at (0.00, 1.30) on lap 2."
+124.1,119.5,transition,AVOID,2,obstacle,RACING,AVOID,Obstacle 0.57 m ahead. RACING to AVOID.
+125.1,120.5,transition,REPLAN,2,blocked,AVOID,REPLAN,Obstacle still 0.55 m ahead after the hold time. AVOID to REPLAN.
+125.1,120.5,info,REPLAN,2,,,,"Free space left 0.64 m, right 0.42 m. Shifting the next 22 waypoints 0.30 m to the left."
+146.3,141.7,transition,RACING,2,passed,REPLAN,RACING,Racer is past the obstacle. REPLAN to RACING.
+179.6,175.0,lap,RACING,3,,,,Lap 2 done in 92.1 s.
+179.6,175.0,lap,RACING,3,,,,Lap 3 begins.
+181.9,177.3,transition,PAUSED,3,pause,RACING,PAUSED,Pause key pressed. RACING to PAUSED.
+186.9,177.3,transition,RACING,3,resume,PAUSED,RACING,Resume key pressed. PAUSED to RACING.
+221.3,211.7,transition,AVOID,3,obstacle,RACING,AVOID,Obstacle 0.59 m ahead. RACING to AVOID.
+222.3,212.7,transition,REPLAN,3,blocked,AVOID,REPLAN,Obstacle still 0.58 m ahead after the hold time. AVOID to REPLAN.
+222.3,212.7,info,REPLAN,3,,,,"Free space left 0.63 m, right 0.42 m. Shifting the next 22 waypoints 0.30 m to the left."
+243.0,233.4,transition,RACING,3,passed,REPLAN,RACING,Racer is past the obstacle. REPLAN to RACING.
+277.0,267.4,lap,RACING,3,,,,Lap 3 done in 92.4 s.
+277.0,267.4,transition,FINISHED,3,laps_done,RACING,FINISHED,All laps done. RACING to FINISHED.
+277.0,267.4,info,FINISHED,3,,,,"Race finished. 3 laps in 267.4 s of race time. Lap times: 80.0 s, 92.1 s, 92.4 s. Distance 41.33 m."

@@ -1,16 +1,39 @@
 # Apex
 
-Apex is my robotics coursework, built around one racing theme. Task 1 is a PyBullet notebook. It builds a race circuit from eight URDF models and a two-wheel racer. It drives the racer to three poses with its wheel motors and checks the scene with three cameras and segmentation masks. Task 2 is a ROS 2 Humble time trial in Gazebo Classic, in Docker. A TurtleBot3 Burger runs three laps of a generated circuit, using pure pursuit over waypoints. It uses its LiDAR to stop for obstacles and plan a way around them, and slam_toolbox can build a 2D map of the circuit from the same LiDAR. A second Burger is driven from the keyboard. A monitor node logs every state change with a plain sentence and writes the metrics of each run to disk.
+Robotics coursework built around one racing theme. Start here: this `README.md` is the main guide for anyone who downloads or clones the project.
+
+**Task 1** is a PyBullet notebook: eight URDF scenery models, a two-wheel racer, three camera views, segmentation checks, and scene queries.
+
+**Task 2** is a ROS 2 Humble time trial in Gazebo Classic (Docker). An orange TurtleBot3 Burger runs three laps with pure pursuit, stops and replans around obstacles with LiDAR, and can build a 2D map with slam_toolbox. A blue Burger is driven from the keyboard. A monitor node logs every state change and writes metrics to disk.
+
+## Contents
+
+| Item | Path |
+|---|---|
+| This guide | `README.md` |
+| Task 1 notebook (with outputs) | `task1_pybullet/apex_track.ipynb` |
+| Task 1 figures | `task1_pybullet/figures/` |
+| Task 2 ROS 2 package | `task2_ros2/apex_race/` |
+| Task 2 step-by-step notebook | `task2_ros2/RUN_ME.ipynb` |
+| Logged races, maps, analysis plots | `task2_ros2/results/` |
+| Evidence screenshots | `docs/screenshots/` (index in `docs/screenshot_list.md`) |
+| Failed approaches log | `docs/attempts.md` |
+| Unit tests | `task2_ros2/apex_race/test/` |
+| Headless mission script | `task2_ros2/scripts/headless_run.sh` |
 
 ## Pictures from a real run
 
-All Task 2 pictures come from the two final runs in `task2_ros2/results/`. Both are headless runs with scripted key presses (see [Results](#results)).
+Analysis plots come from the final runs in `task2_ros2/results/`. GUI evidence is in `docs/screenshots/` (listed in `docs/screenshot_list.md`).
 
-| Task 1: three cameras, three robot poses | Task 2: racer path, coloured by state (one car) |
+| Task 1: three cameras, three robot poses | Task 2: racer path by state (one car) |
 |---|---|
 | ![camera grid](task1_pybullet/figures/camera_grid.png) | ![path by state](task2_ros2/results/one_car_20261008_210907/figures/path_by_state.png) |
 
-Two car run: the racer passes the parked player car (blue square) on every lap and the cone on laps 2 and 3.
+| Gazebo circuit | AVOID / REPLAN at the cone |
+|---|---|
+| ![world](docs/screenshots/t2_world_overview.png) | ![avoid](docs/screenshots/t2_avoid_replan.png) |
+
+Two-car run: the racer passes the parked player car (blue square) on every lap and the cone on laps 2 and 3.
 
 ![two car path](task2_ros2/results/player_20261008_211917/figures/path_by_state.png)
 
@@ -18,41 +41,155 @@ Two car run: the racer passes the parked player car (blue square) on every lap a
 ![speed](task2_ros2/results/one_car_20261008_210907/figures/speed.png)
 ![front range](task2_ros2/results/one_car_20261008_210907/figures/front_range.png)
 
-2D LiDAR map built by slam_toolbox during a two car run. The black dot on the back straight is the cone, and the one on the front straight is the parked player car. See [2D LiDAR map](#2d-lidar-map).
+2D LiDAR map from a two-car run. Black dots are the cone (back straight) and the parked player car (front straight). See [2D LiDAR map](#2d-lidar-map).
 
 ![lidar map](task2_ros2/results/map_player_20261009_004014/figures/map.png)
 
-Gazebo screenshots are taken by hand. See `docs/screenshot_list.md`.
+RViz live map on lap 2 (green racing line bent around the cone):
 
-## Run it
+![rviz](docs/screenshots/t2_rviz_map.png)
 
-### Task 1 (about 10 s to run the notebook)
+## How to run
 
-1. Install `uv` once, if it is missing: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-2. Make the venv: `uv venv --python 3.11 task1_pybullet/.venv`
-3. Install the packages: `VIRTUAL_ENV=task1_pybullet/.venv uv pip install -r task1_pybullet/requirements.txt`
-4. Run the notebook: `cd task1_pybullet && .venv/bin/jupyter nbconvert --to notebook --execute --inplace apex_track.ipynb`
-   Or open it with `.venv/bin/jupyter lab` and use Restart and Run All.
+All commands assume you start from the **project root** (the folder that contains `README.md`, `task1_pybullet/`, and `task2_ros2/`).
 
-### Task 2
+**Requirements**
 
-`task2_ros2/RUN_ME.ipynb` has every command in order, with the time each step took. In short:
+* Task 1: Linux, Python 3.11 via [`uv`](https://github.com/astral-sh/uv) (no ROS on the host).
+* Task 2: Linux, Docker, and a desktop `DISPLAY` for the Gazebo window.
 
-1. Build the image once: `docker build -t apex:humble task2_ros2/docker`
-2. Start the container with the display: `task2_ros2/docker/run.sh`
-3. Inside it, build the package: `cd /ws && colcon build --symlink-install --base-paths src/apex/task2_ros2 && source install/setup.bash && cd /ws/src/apex/task2_ros2`
-4. Start the race: `ros2 launch apex_race race.launch.py player:=true` (leave out `player:=true` for one car)
-5. In a second terminal (`task2_ros2/docker/exec.sh`), start the keyboard: `ros2 run apex_race keyboard_node --ros-args --params-file apex_race/config/params.yaml`
-6. Press `g` to start. On lap 3 press `p`, wait, press `p` again. Drive the blue car with `w a s d`.
-7. After the race: `python3 scripts/analyze_run.py runs/<timestamp>`
+### Task 1 — PyBullet notebook (~10 s)
 
-To build the 2D map as well, add `slam:=true` in step 4. Add `rviz:=true` too to watch the map grow live in RViz (see [Live view in RViz](#live-view-in-rviz)). Before you stop the launch, save the map from another container shell: `ros2 run nav2_map_server map_saver_cli -f runs/<timestamp>/map --ros-args -p use_sim_time:=true`. Then draw it: `python3 scripts/plot_map.py runs/<timestamp>`.
+```bash
+# once
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv --python 3.11 task1_pybullet/.venv
+VIRTUAL_ENV=task1_pybullet/.venv uv pip install -r task1_pybullet/requirements.txt
 
-For a run with no window and scripted keys: `task2_ros2/docker/run.sh --headless`, then `docker exec apex bash -c 'source /opt/apex_env.sh && cd /ws && colcon build --symlink-install --base-paths src/apex/task2_ros2 && source install/setup.bash && cd src/apex/task2_ros2 && scripts/headless_run.sh'`. Add `player` to spawn the second car and `slam` to build and save the map, for example `scripts/headless_run.sh player slam`.
+# run (from the project root)
+cd task1_pybullet
+.venv/bin/jupyter nbconvert --to notebook --execute --inplace apex_track.ipynb
+```
+
+Or open it interactively and use **Kernel → Restart and Run All**:
+
+```bash
+cd task1_pybullet
+.venv/bin/jupyter lab
+```
+
+Expected result: no cell errors, “Check 1 passed” and “Check 2 passed”, and four PNGs under `task1_pybullet/figures/`.
+
+### Task 2 — ROS 2 race (Docker + Gazebo)
+
+The same steps with measured times are in `task2_ros2/RUN_ME.ipynb`. The short version is below.
+
+**1. Build the image once** (from the project root):
+
+```bash
+docker build -t apex:humble task2_ros2/docker
+```
+
+**2. Start the container** (needs a desktop display):
+
+```bash
+task2_ros2/docker/run.sh
+```
+
+This opens a shell inside the container. The project is mounted at `/ws/src/apex`.
+
+**3. Build and launch the race** (inside the container):
+
+```bash
+cd /ws && colcon build --symlink-install --base-paths src/apex/task2_ros2
+source install/setup.bash
+cd /ws/src/apex/task2_ros2
+ros2 launch apex_race race.launch.py player:=true
+```
+
+Launch flags:
+
+| Flag | Effect |
+|---|---|
+| `player:=true` | Spawn the blue keyboard car |
+| `slam:=true` | Build a 2D LiDAR map while racing |
+| `rviz:=true` | Open RViz (needs `slam:=true`) |
+| `gui:=false` | No Gazebo window (used by headless runs) |
+
+Example with mapping and live RViz:
+
+```bash
+ros2 launch apex_race race.launch.py player:=true slam:=true rviz:=true
+```
+
+**4. Keyboard in a second host terminal** (keep the first terminal on the launch):
+
+```bash
+# from the project root on the host
+task2_ros2/docker/exec.sh
+# then inside the container:
+cd /ws/src/apex/task2_ros2
+ros2 run apex_race keyboard_node --ros-args --params-file apex_race/config/params.yaml
+```
+
+Optional status view in a third shell:
+
+```bash
+task2_ros2/docker/exec.sh
+ros2 topic echo /apex/status
+```
+
+**5. Keys** (focus must be on the keyboard terminal, not Gazebo):
+
+| Key | Action |
+|---|---|
+| `g` | Start (countdown 3, 2, 1, Go) |
+| `p` | Pause / resume |
+| `x` | Abort |
+| `r` | Reset both cars to the grid |
+| `w` `a` `s` `d` | Drive the blue player car |
+| space | Stop the player car |
+| `q` | Quit the keyboard node |
+
+Typical mission: press `g` → watch lap 1 clear → on lap 2 the cone drops and the racer AVOID/REPLANs → on lap 3 press `p`, wait, press `p` again → finish after 3 laps.
+
+**6. After the race** (same container, still in `task2_ros2`):
+
+```bash
+python3 scripts/analyze_run.py runs/<timestamp>
+```
+
+If the launch used `slam:=true`, save and plot the map before stopping it:
+
+```bash
+ros2 run nav2_map_server map_saver_cli -f runs/<timestamp>/map --ros-args -p use_sim_time:=true
+python3 scripts/plot_map.py runs/<timestamp>
+```
+
+### Task 2 — headless (no window, scripted keys)
+
+Quick end-to-end check (~5 min):
+
+```bash
+# from the project root
+task2_ros2/docker/run.sh --headless
+docker exec apex bash -c 'source /opt/apex_env.sh && cd /ws && colcon build --symlink-install --base-paths src/apex/task2_ros2 && source install/setup.bash && cd src/apex/task2_ros2 && scripts/headless_run.sh'
+```
+
+Optional args after `headless_run.sh`: `player`, `slam`, or both (`scripts/headless_run.sh player slam`).
+
+If a previous container named `apex` still exists: `docker rm -f apex`, then start again.
+
+### Common pitfalls
+
+* Run Docker / `run.sh` from the **project root** (where `README.md` is), not from `task1_pybullet/`.
+* `cd /ws` and `ros2 …` only work **inside** the container (`run.sh` or `exec.sh`), not on the host.
+* Keys only work while `keyboard_node` has focus.
+* Closing Gazebo after Ctrl+C can take about 5 s.
 
 ## Assignment mapping
 
-The full assignment brief was not in the repo when I built this, so the mapping follows the checklist in my project brief.
+The mapping below follows the coursework checklist used for this project.
 
 ### Task 1
 
@@ -67,7 +204,7 @@ The full assignment brief was not in the repo when I built this, so the mapping 
 | All objects and the robot visible across views | Segmentation mask asserts: racer in all 9 images, every body id in at least one | same, section 7 |
 | One interaction or query | Highlight all obstacles, nearest object per pose, role lookup by position | same, section 8 |
 | Matplotlib display | Every image shown with a title | same, sections 6 and 8 |
-| Reflection with failed attempts | DRAFT reflection built from the attempts log | same, section 9; `docs/attempts.md` |
+| Reflection with failed attempts | Reflection built from the attempts log | same, section 9; `docs/attempts.md` |
 
 ### Task 2
 
@@ -80,7 +217,7 @@ The full assignment brief was not in the repo when I built this, so the mapping 
 | Keyboard interaction | `g` start, `p` pause or resume, `x` abort, `r` reset, `w a s d` drive the player car | `apex_race/keyboard_node.py` |
 | A state machine with five or more states | Eight states in one transition table with no ROS imports | `apex_race/state_machine.py` |
 | A monitoring feature | One sentence per state change, `/apex/status` once a second, and `events.csv`, `ticks.csv` and `summary.json` per run | `apex_race/monitor_node.py` |
-| One complete mission with logs, screenshots and text | Three laps, cone on lap 2, one pause and resume, summary printed at the end | `task2_ros2/results/`, `docs/screenshot_list.md` |
+| One complete mission with logs, screenshots and text | Three laps, cone on lap 2, one pause and resume, summary printed at the end | `task2_ros2/results/`, `docs/screenshots/`, `docs/screenshot_list.md` |
 | A notebook with every run command | Every command in order, with measured times | `task2_ros2/RUN_ME.ipynb` |
 
 ## Architecture
@@ -148,7 +285,7 @@ stateDiagram-v2
 | COUNTDOWN | Stands still and logs 3, 2, 1, Go | 3 s have passed, or `x` |
 | RACING | Pure pursuit over the centre line. Speed drops as curvature rises | Something enters the corridor within 0.6 m, all laps are done, `p`, or `x` |
 | AVOID | Stops and watches the corridor ahead | The corridor is clear beyond 0.8 m (to RACING), or it is still blocked after 1 s (to REPLAN) |
-| REPLAN | Compares free space beside the obstacle, shifts the next 22 waypoints to the open side, drives the new line at 0.12 m/s | It is past the shifted stretch, or something comes within 0.15 m right in front |
+| REPLAN | Compares free space beside the obstacle, shifts the next 22 waypoints to the open side, drives the new line at 0.12 m/s | It is past the shifted stretch, or something comes within 0.15 m, right in front |
 | PAUSED | Stands still. Race time stops | `p` (to RACING), `x`, or `r` |
 | FINISHED | Stands still. The summary is printed | `r` |
 | ABORTED | Stands still. The summary is written | `r` |
@@ -204,9 +341,9 @@ All tunable values live in `task2_ros2/apex_race/config/params.yaml`. The circui
 | `/auto/odom` | nav_msgs/Odometry | Gazebo | race_controller_node, monitor_node |
 | `/auto/cmd_vel` | geometry_msgs/Twist | race_controller_node | Gazebo |
 | `/player/cmd_vel` | geometry_msgs/Twist | keyboard_node | Gazebo |
-| `/player/scan`, `/player/odom` | as above | Gazebo | (free for your own use) |
+| `/player/scan`, `/player/odom` | as above | Gazebo | (available for extra tools) |
 | `/apex/command` | std_msgs/String, one key | keyboard_node | race_controller_node |
-| `/apex/status` | std_msgs/String (JSON), 1 Hz | race_controller_node | you (`ros2 topic echo`) |
+| `/apex/status` | std_msgs/String (JSON), 1 Hz | race_controller_node | `ros2 topic echo` |
 | `/apex/telemetry` | std_msgs/String (JSON), 10 Hz | race_controller_node | monitor_node, drop_obstacle |
 | `/apex/events` | std_msgs/String (JSON) | race_controller_node, drop_obstacle | monitor_node |
 | `/spawn_entity`, `/gazebo/set_entity_state`, `/delete_entity` | services | Gazebo | drop_obstacle, race_controller_node (reset) |
@@ -218,7 +355,7 @@ All tunable values live in `task2_ros2/apex_race/config/params.yaml`. The circui
 
 ## Results
 
-Every number here comes from a logged run in `task2_ros2/results/`. Both final runs are headless, with the keys pressed by `scripts/mission_driver.py` as topic messages. The GUI run with real key presses is still to do (see `docs/screenshot_list.md`).
+Numbers below come from logged runs in `task2_ros2/results/`. The final metric runs are headless, with keys pressed by `scripts/mission_driver.py`. GUI evidence (Gazebo, RViz, terminals) is in `docs/screenshots/`.
 
 | | One car | Two cars |
 |---|---|---|
@@ -233,25 +370,25 @@ Every number here comes from a logged run in `task2_ros2/results/`. Both final r
 | Pauses | 1 | 1 |
 | Wall clock for the whole script | 4 min 42 s | 5 min 27 s |
 
-The mission repeats closely. A second one car run, on a fresh container from the README command (`runs/20261008_215110`, not committed), gave 80.0, 92.1 and 92.3 s, 0 contact events and 41.33 m.
+The mission repeats closely. A second one-car run from the headless command in this `README.md` (`runs/20261008_215110`, not committed) gave 80.0, 92.1 and 92.3 s, 0 contact events and 41.33 m.
 
-What happened in the one car run:
+What happened in the one-car run:
 
 * Lap 1 had nothing on the track and took 80.0 s. Speed was 0.22 m/s on the straights and about 0.147 m/s in the turns, as the curvature rule predicts.
 * On lap 2, at 87.5 s, the cone dropped on the back straight at (0.00, 1.30), 0.1 m toward the outer wall. At 119.5 s the log reads `Obstacle 0.58 m ahead. RACING to AVOID.` One second later the cone was still there: `AVOID to REPLAN`, then `Free space left 0.63 m, right 0.41 m. Shifting the next 22 waypoints 0.30 m to the left.` The racer passed inside the cone and returned to RACING at 141.6 s.
 * The cone stays on the track, so lap 3 had the same pass, with almost the same readings (0.63 m left, 0.42 m right).
 * At the start of lap 3 the pause key put the racer in PAUSED, and the resume key 5 s later put it back in RACING. Race time does not count paused time.
 
-What happened in the two car run:
+What happened in the two-car run:
 
 * The player car was parked at (0.96, -1.19), on the racing line just after the finish line, before the start key.
 * The racer met it on every lap. The free space read 0.48 m left and 0.44 m right on lap 1, and about 0.54 m on each side on laps 2 and 3. It passed on the left, then the right, then the left. The racer also passed the cone on laps 2 and 3. Every pass ended in RACING, and no contact event happened.
-* Three earlier player car runs went wrong. In one the racer touched the parked car twice. In one it touched the car three times and then got wedged beside it. In one the scripted player car squeezed it at the start. Each is in `docs/attempts.md`, with the fix that followed.
+* Three earlier player-car runs went wrong. In one the racer touched the parked car twice. In one it touched the car three times and then got wedged beside it. In one the scripted player car squeezed it at the start. Each is in `docs/attempts.md`, with the fix that followed.
 
 Known limits:
 
 * The racer only checks the corridor ahead. A car that drives in from the side can still touch it (attempts log, run `20261008_211402`).
-* Odometry here is the Gazebo diff drive plugin's default world based odometry, so `/odom` has no drift. On a real Burger, wheel odometry drifts, and the lap timing and pure pursuit would need a localisation source.
+* Odometry here is the Gazebo diff drive plugin's default world-based odometry, so `/odom` has no drift. On a real Burger, wheel odometry drifts, and the lap timing and pure pursuit would need a localisation source.
 * Contact events come from the LiDAR, not from a bumper sensor. A touch below the LiDAR plane, for example by a wheel, is only seen as a low range.
 
 ## 2D LiDAR map
@@ -261,7 +398,7 @@ With `slam:=true` the launch also starts slam_toolbox (online async mode). It bu
 Two checks make the map honest:
 
 * **Against the real walls.** `scripts/plot_map.py` takes every occupied cell and measures its distance to the nearest wall face from `circuit.yaml`. Cells more than 15 cm from both walls are grouped and listed as other objects.
-* **Against the true pose.** `/odom` here is Gazebo's true pose, so the map frame should sit exactly on the odom frame. `scripts/slam_offset.py` records slam_toolbox's map to odom correction during the run. That correction is the SLAM pose error.
+* **Against the true pose.** `/odom` here is Gazebo's true pose, so the map frame should sit exactly on the odom frame. `scripts/slam_offset.py` records slam_toolbox's map-to-odom correction during the run. That correction is the SLAM pose error.
 
 | Run | Cars | Occupied cells within 5 cm of a wall | Median / 95th percentile distance | Other objects found (15 cm or more off the walls, 5+ cells) | Largest SLAM pose error |
 |---|---|---|---|---|---|
@@ -278,8 +415,8 @@ The cone really landed at (0.00, 1.30) and the player car was parked at (0.96, -
 What the runs show:
 
 * In both runs with the error recorder, the heading error grows to about 10 to 12 degrees during lap 1. A loop closure as lap 2 begins pulls it back to under 1 degree and 1 cm. For the rest of the race the error stays under 3.7 degrees and 9.5 cm.
-* Map quality changes from run to run. Run `003315` drifted more in lap 1, and its outer walls in both turns came out thick and doubled, up to about 0.25 m inside the real face. I did not tune the scan matcher to hide this.
-* The racing does not change with mapping on. The one car mapping runs gave 80.0, 92.1 and 92.3 s and 80.0, 92.1 and 92.4 s, with 0 contact events, the same as without it.
+* Map quality changes from run to run. Run `003315` drifted more in lap 1, and its outer walls in both turns came out thick and doubled, up to about 0.25 m inside the real face. The scan matcher was left at slam_toolbox defaults so the maps show the real behaviour.
+* The racing does not change with mapping on. The one-car mapping runs gave 80.0, 92.1 and 92.3 s and 80.0, 92.1 and 92.4 s, with 0 contact events, the same as without it.
 * slam_toolbox never sees outside the walls. The walls are 0.3 m tall and the LiDAR sits 0.18 m up, so the grandstands, pit lane and the infield all stay grey (not seen).
 * The racer drives on the true pose from `/odom`, not on the map. The map is a product of the run, not an input to it.
 
@@ -288,51 +425,52 @@ What the runs show:
 `ros2 launch apex_race race.launch.py slam:=true rviz:=true` opens RViz with `apex_race/config/apex_map.rviz`. It is a top-down view in the map frame with five layers:
 
 * **Live map:** `/map` from slam_toolbox, updated every 2 s.
-* **Racing line:** `/apex/path`, the waypoints the racer is following. In REPLAN you see the line bend around the obstacle, and it snaps back once the racer is past.
+* **Racing line:** `/apex/path`, the waypoints the racer is following. In REPLAN the line bends around the obstacle, then snaps back once the racer is past.
 * **LiDAR scan:** `/auto/scan` as red points.
 * **Racer trail:** poses from `/auto/odom` as orange arrows, one every 0.1 m or 0.3 rad, up to the last 300.
 * **Frames:** the map, odom, base_footprint and base_scan axes.
 
 `rviz:=true` needs `slam:=true`, because the map and odom frames come from slam_toolbox. Without it the launch prints a note and skips RViz.
 
-The screenshots below are real RViz frames from run `rviz_live_20261009`. I took them on a virtual screen (Xvfb) inside the container, because my shell has no access to the laptop screen. The racer ran the normal one car mission with scripted keys: 80.0, 92.1 and 92.3 s, 0 contact events (`summary.json` and `events.csv` are in the same folder).
+The frames below are from run `rviz_live_20261009` (one-car mission with scripted keys: 80.0, 92.1 and 92.3 s, 0 contact events). Logs are in the same folder. Matching evidence is also under `docs/screenshots/t2_rviz_map.png`.
 
 | Lap 1, map half built | Lap 2, REPLAN around the cone | Race over |
 |---|---|---|
 | ![rviz lap 1](task2_ros2/results/rviz_live_20261009/rviz_1_lap1.png) | ![rviz replan](task2_ros2/results/rviz_live_20261009/rviz_2_replan.png) | ![rviz end](task2_ros2/results/rviz_live_20261009/rviz_3_end.png) |
 
-In the lap 1 part of the trail you can see the SLAM drift from the table above. RViz places each trail arrow with the map to odom correction it had when that arrow arrived. During lap 1 that correction drifts by up to about 10 degrees, so those arrows sit off the racing line. After the loop closure at the start of lap 2, the new arrows sit close to the line again. The trail keeps only 300 arrows, so by the end most of lap 1 has dropped off.
+In the lap 1 part of the trail the SLAM drift from the table above is visible. RViz places each trail arrow with the map-to-odom correction it had when that arrow arrived. During lap 1 that correction drifts by up to about 10 degrees, so those arrows sit off the racing line. After the loop closure at the start of lap 2, the new arrows sit close to the line again. The trail keeps only 300 arrows, so by the end most of lap 1 has dropped off.
 
 ## Tests
 
-* Task 1: `Restart and Run All` finishes with no errors. The notebook asserts that static poses match across captures, that the racer shows in all 9 images, and that every body id shows in at least one.
+* Task 1: **Restart and Run All** finishes with no errors. The notebook asserts that static poses match across captures, that the racer shows in all 9 images, and that every body id shows in at least one.
 * Task 2: 42 unit tests for the pure modules (`cd task2_ros2/apex_race && python3 -m pytest -q test`). They cover the transition table, the curvature formula against a known circle, the speed curve, finish line crossings and their direction, the free space measure, the waypoint shift, the contact counter, and the robot model's odom TF switch for mapping.
 * Task 2 end to end: `scripts/headless_run.sh` runs the full mission with no window and scripted keys. `scripts/headless_run.sh slam` also builds the map and saves it.
-* Figures: I redrew every committed figure from its saved run files (`analyze_run.py`, `plot_map.py`) and re-ran the Task 1 notebook from scratch. All 10 Task 2 figures and all 4 Task 1 figures came out byte for byte the same as the committed ones.
+* Figures: every committed figure can be redrawn from its saved run files (`analyze_run.py`, `plot_map.py`) and the Task 1 notebook can be re-run from scratch.
 
 ## Layout
 
 ```
-README.md
+README.md                 ← start here
 docs/
-  attempts.md            every failed approach, with what broke and what came next
-  screenshot_list.md     screenshots to take by hand
+  attempts.md             failed approaches, with what broke and what came next
+  screenshot_list.md      index of evidence screenshots
+  screenshots/            18 GUI / notebook evidence PNGs
 task1_pybullet/
-  apex_track.ipynb       the notebook, committed with outputs
+  apex_track.ipynb        notebook, committed with outputs
   requirements.txt
-  figures/               images saved by the notebook
+  figures/                images saved by the notebook
 task2_ros2/
-  RUN_ME.ipynb           every command, in order, with times
-  docker/                Dockerfile, run.sh, exec.sh, entrypoint.sh, apex_env.sh
-  apex_race/             the ROS 2 package
-    apex_race/           nodes and pure modules
-    config/              params.yaml, circuit.yaml, apex_map.rviz
-    launch/              race.launch.py
-    worlds/              apex_circuit.world (generated)
-    test/                unit tests
-  world_gen/             generate_world.py
-  scripts/               analyze_run.py, plot_map.py, slam_offset.py, headless_run.sh,
-                         mission_driver.py, make_run_me.py
-  results/               the runs used in this README
-  runs/                  every run (not committed)
+  RUN_ME.ipynb            every command, in order, with times
+  docker/                 Dockerfile, run.sh, exec.sh, entrypoint.sh, apex_env.sh
+  apex_race/              the ROS 2 package
+    apex_race/            nodes and pure modules
+    config/               params.yaml, circuit.yaml, apex_map.rviz
+    launch/               race.launch.py
+    worlds/               apex_circuit.world (generated)
+    test/                 unit tests
+  world_gen/              generate_world.py
+  scripts/                analyze_run.py, plot_map.py, slam_offset.py, headless_run.sh,
+                          mission_driver.py, capture_screenshots.sh, make_run_me.py
+  results/                runs used in this README.md
+  runs/                   live runs (not committed)
 ```

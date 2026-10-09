@@ -1,6 +1,6 @@
 # Attempts log
 
-Each entry records an approach that failed, what broke, and what came next.
+Development log for this coursework. Each entry records an approach that failed, what broke, and what came next. Start with `README.md` for how to run the finished project.
 
 ## 2026-10-08: Task 1, track URDF would not load
 

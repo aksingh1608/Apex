@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Write task2_ros2/RUN_ME.ipynb from the steps below.
 
-The step times were measured on my laptop and live in run_me_times.json.
-Run:  python3 task2_ros2/scripts/make_run_me.py task2_ros2/scripts/run_me_times.json
+Step times live in run_me_times.json (measured on Ubuntu 24.04).
+Run from the project root:
+  python3 task2_ros2/scripts/make_run_me.py task2_ros2/scripts/run_me_times.json
+
+See README.md for the short run guide.
 """
 
 import json
@@ -25,17 +28,17 @@ def build(times):
     cells = [md(f"""
 # Apex Task 2: run the ROS 2 race
 
-This notebook lists every command for Task 2, in order, with the time each step took on my laptop
-(Ubuntu 24.04, 12 cores, CPU rendering in Docker).
+Companion notebook to `README.md`. It lists every Task 2 command in order, with the time each
+step took on Ubuntu 24.04 (12 cores, CPU rendering in Docker).
 
 There are two ways to use it.
 
 * **Headless check.** Run the code cells from top to bottom. They build the image, start the container,
   run one full mission with scripted key presses, and draw the figures. No window opens.
-* **Recorded run with the GUI.** Follow the markdown steps in section 4. They need three terminals,
+* **Recorded run with the GUI.** Follow the markdown steps in section 7. They need three terminals,
   because Gazebo and the keyboard node need a real screen and a real keyboard.
 
-All paths are relative to the repo root. The first code cell moves there.
+All paths are relative to the project root (the folder that contains `README.md`). The first code cell moves there.
 """),
              code("""
 %cd ..
@@ -122,15 +125,15 @@ Add `player` before `slam` to map the two car mission.
 Do this in three terminals, not in this notebook. Stop the headless container first:
 `docker rm -f apex`.
 
-**Terminal 1** (time to Gazebo window: about """ + t['gui_up'] + """):
+**Terminal 1** (time to a ready racer with no window: about """ + t['gui_up'] + """; Gazebo with a display takes a little longer):
 ```
-cd ~/robotics\\ coursework
+# from the project root (folder that contains README.md)
 task2_ros2/docker/run.sh
 cd /ws && colcon build --symlink-install --base-paths src/apex/task2_ros2 && source install/setup.bash
 cd /ws/src/apex/task2_ros2
 ros2 launch apex_race race.launch.py player:=true
 ```
-Leave out `player:=true` for the one car version. Add `slam:=true` to build the 2D map as well, and `slam:=true rviz:=true` to also open RViz with the live map, the scan and the racing line.
+Leave out `player:=true` for the one-car version. Add `slam:=true` to build the 2D map as well, and `slam:=true rviz:=true` to also open RViz with the live map, the scan and the racing line.
 
 **Terminal 2**, the keyboard:
 ```

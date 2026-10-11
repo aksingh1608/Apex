@@ -1,6 +1,6 @@
 # Apex
 
-Robotics coursework built around one racing theme. Start here: this `README.md` is the main guide for anyone who downloads or clones the project.
+An autonomous racing robot in ROS 2 and Gazebo, with a PyBullet scene that knows what each object is. Start here: this `README.md` is the main guide for anyone who downloads or clones the project.
 
 **Task 1** is a PyBullet notebook: eight URDF scenery models, a two-wheel racer, three camera views, segmentation checks, and scene queries.
 
